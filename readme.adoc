@@ -1,0 +1,18 @@
+= ⚠️ x.realy.lol ⚠️
+:toc:
+:note-caption: note 👉
+:warning-caption: ⚠️
+
+image:https://img.shields.io/badge/godoc-documentation-blue.svg[Documentation,link=https://pkg.go.dev/x.realy.lol]
+
+zap me: ⚡mlekudev@getalby.com
+
+image:./realy.png[realy.png]
+
+== about
+
+building out of the relayer codebase made things better than using khatru but it was still so awful by the end of it... too complicated...
+
+so this is an attempt to uncomplicate everything
+
+WARNING: work in progress, beware. may cause unknown genetic mutations, cancer, and heart disease. potentially, all of the above!
