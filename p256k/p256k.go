@@ -36,7 +36,7 @@ type Signer struct {
 var _ realy.I = &Signer{}
 
 // Generate a new Signer key pair using the CGO bindings to libsecp256k1
-func (s *Signer) Generate() (err error) {
+func (s *Signer) Generate(nobtcec ...bool) (err error) {
 	var cs *Sec
 	var cx *XPublicKey
 	if s.skb, s.pkb, cs, cx, err = Generate(); chk.E(err) {
@@ -44,11 +44,13 @@ func (s *Signer) Generate() (err error) {
 	}
 	s.SecretKey = &cs.Key
 	s.PublicKey = cx.Key
-	s.BTCECSec, _ = btcec.PrivKeyFromBytes(s.skb)
+	if len(nobtcec) > 0 && nobtcec[0] == false {
+		s.BTCECSec, _ = btcec.PrivKeyFromBytes(s.skb)
+	}
 	return
 }
 
-func (s *Signer) InitSec(skb []byte) (err error) {
+func (s *Signer) InitSec(skb []byte, nobtcec ...bool) (err error) {
 	var cs *Sec
 	var cx *XPublicKey
 	// var cp *PublicKey
@@ -63,7 +65,9 @@ func (s *Signer) InitSec(skb []byte) (err error) {
 	s.PublicKey = cx.Key
 	// s.ECPublicKey = cp.Key
 	// needed for ecdh
-	s.BTCECSec, _ = btcec.PrivKeyFromBytes(s.skb)
+	if len(nobtcec) > 0 && nobtcec[0] == false {
+		s.BTCECSec, _ = btcec.PrivKeyFromBytes(s.skb)
+	}
 	return
 }
 

@@ -7,10 +7,10 @@ package signer
 type I interface {
 	// Generate creates a fresh new key pair from system entropy, and ensures it is even (so
 	// ECDH works).
-	Generate() (err error)
+	Generate(nobtcec ...bool) (err error)
 	// InitSec initialises the secret (signing) key from the raw bytes, and also
 	// derives the public key because it can.
-	InitSec(sec []byte) (err error)
+	InitSec(sec []byte, nobtcec ...bool) (err error)
 	// InitPub initializes the public (verification) key from raw bytes, this is
 	// expected to be an x-only 32 byte pubkey.
 	InitPub(pub []byte) (err error)
