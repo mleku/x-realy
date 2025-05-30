@@ -44,7 +44,8 @@ func (s *Signer) Generate(nobtcec ...bool) (err error) {
 	}
 	s.SecretKey = &cs.Key
 	s.PublicKey = cx.Key
-	if len(nobtcec) > 0 && nobtcec[0] == false {
+	if len(nobtcec) > 0 && nobtcec[0] != true {
+	} else {
 		s.BTCECSec, _ = btcec.PrivKeyFromBytes(s.skb)
 	}
 	return
@@ -65,7 +66,8 @@ func (s *Signer) InitSec(skb []byte, nobtcec ...bool) (err error) {
 	s.PublicKey = cx.Key
 	// s.ECPublicKey = cp.Key
 	// needed for ecdh
-	if len(nobtcec) > 0 && nobtcec[0] == false {
+	if len(nobtcec) > 0 && nobtcec[0] != true {
+	} else {
 		s.BTCECSec, _ = btcec.PrivKeyFromBytes(s.skb)
 	}
 	return

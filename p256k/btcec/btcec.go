@@ -21,7 +21,7 @@ type Signer struct {
 var _ signer.I = &Signer{}
 
 // Generate creates a new Signer.
-func (s *Signer) Generate() (err error) {
+func (s *Signer) Generate(nobtcec ...bool) (err error) {
 	if s.SecretKey, err = ec.NewSecretKey(); chk.E(err) {
 		return
 	}
@@ -33,7 +33,7 @@ func (s *Signer) Generate() (err error) {
 }
 
 // InitSec initialises a Signer using raw secret key bytes.
-func (s *Signer) InitSec(sec []byte) (err error) {
+func (s *Signer) InitSec(sec []byte, nobtcec ...bool) (err error) {
 	if len(sec) != secp256k1.SecKeyBytesLen {
 		err = errorf.E("sec key must be %d bytes", secp256k1.SecKeyBytesLen)
 		return
