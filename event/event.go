@@ -14,17 +14,19 @@ import (
 	"x.realy.lol/log"
 	"x.realy.lol/p256k"
 	"x.realy.lol/signer"
+	"x.realy.lol/tags"
 	"x.realy.lol/text"
+	"x.realy.lol/timestamp"
 )
 
 type E struct {
-	Id        string     `json:"id"`
-	Pubkey    string     `json:"pubkey"`
-	CreatedAt int64      `json:"created_at"`
-	Kind      uint16     `json:"kind`
-	Tags      [][]string `json:"tags"`
-	Content   string     `json:"content"`
-	Sig       string     `json:"sig"`
+	Id        string              `json:"id"`
+	Pubkey    string              `json:"pubkey"`
+	CreatedAt timestamp.Timestamp `json:"created_at"`
+	Kind      int                 `json:"kind`
+	Tags      tags.Tags           `json:"tags"`
+	Content   string              `json:"content"`
+	Sig       string              `json:"sig"`
 }
 
 func New() (ev *E) { return &E{} }
@@ -189,13 +191,13 @@ func (ev *E) FromCanonical(b []byte) (err error) {
 		err = errorf.E("failed to get created_at value, got type %v expected float64", reflect.TypeOf(un[2]))
 		return
 	}
-	ev.CreatedAt = int64(createdAt)
+	ev.CreatedAt = timestamp.New(createdAt)
 	var kind float64
 	if kind, ok = un[3].(float64); !ok {
 		err = errorf.E("failed to get kind value, got type %v expected float64", reflect.TypeOf(un[3]))
 		return
 	}
-	ev.Kind = uint16(kind)
+	ev.Kind = int(kind)
 	var tags []any
 	if tags, ok = un[4].([]any); !ok {
 		err = errorf.E("failed to get tags value, got type %v expected []interface", reflect.TypeOf(un[4]))
@@ -211,8 +213,8 @@ func (ev *E) FromCanonical(b []byte) (err error) {
 	return
 }
 
-func FromSliceInterface(in []any) (tags [][]string, err error) {
-	tags = make([][]string, 0)
+func FromSliceInterface(in []any) (t tags.Tags, err error) {
+	t = make(tags.Tags, 0)
 	for _, v := range in {
 		var ok bool
 		var vv []any
@@ -229,7 +231,7 @@ func FromSliceInterface(in []any) (tags [][]string, err error) {
 			}
 			tag = append(tag, x)
 		}
-		tags = append(tags, tag)
+		t = append(t, tag)
 	}
 	return
 }
