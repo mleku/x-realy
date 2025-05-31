@@ -6,6 +6,7 @@ import (
 	"sync"
 	"unsafe"
 
+	"github.com/minio/sha256-simd"
 	"golang.org/x/exp/constraints"
 )
 
@@ -114,4 +115,11 @@ func IsLowerHex(thing string) bool {
 		return false
 	}
 	return true
+}
+
+// Hash is a little helper generate a hash and return a slice instead of an
+// array.
+func Hash(in []byte) (out []byte) {
+	h := sha256.Sum256(in)
+	return h[:]
 }

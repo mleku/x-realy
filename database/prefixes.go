@@ -1,10 +1,13 @@
 package database
 
 import (
+	"bytes"
 	"encoding/binary"
 
 	"x.realy.lol/chk"
+	"x.realy.lol/ec/schnorr"
 	"x.realy.lol/errorf"
+	"x.realy.lol/helpers"
 	"x.realy.lol/timestamp"
 )
 
@@ -199,6 +202,15 @@ type IdxEvent struct {
 	Serial []byte
 }
 
+func NewIdxEvent(ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	idx = append([]byte(Prefix[Event]), ser...)
+	return
+}
+
 func IdxToEvent(idx []byte) (ie *IdxEvent, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -214,6 +226,34 @@ type IdxFullIndex struct {
 	Kind      int
 	CreatedAt timestamp.Timestamp
 	Serial    []byte
+}
+
+func NewIdxFullIndex(fi, pk []byte, ki int, ca timestamp.Timestamp, ser []byte) (idx []byte, err error) {
+	if len(fi) != fullId {
+		err = errorf.E("invalid length for fullID, got %d require %d", len(fi), fullId)
+		return
+	}
+	if len(pk) != schnorr.PubKeyBytesLen {
+		err = errorf.E("invalid length for pubkey, got %d require %d", len(pk), schnorr.PubKeyBytesLen)
+		return
+	}
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	kiB := make([]byte, kind)
+	binary.LittleEndian.PutUint16(kiB, uint16(ki))
+	caB := make([]byte, createdAt)
+	binary.LittleEndian.PutUint64(caB, uint64(ca))
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[FullIndex]))
+	buf.Write(fi)
+	buf.Write(helpers.Hash(pk)[:pubHash])
+	buf.Write(kiB)
+	buf.Write(caB)
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
 }
 
 func IdxToFullIndex(idx []byte) (ie *IdxFullIndex, err error) {
@@ -236,6 +276,23 @@ type IdxPubkey struct {
 	Serial  []byte
 }
 
+func NewIdxPubkey(pk, ser []byte) (idx []byte, err error) {
+	if len(pk) != schnorr.PubKeyBytesLen {
+		err = errorf.E("invalid length for pubkey, got %d require %d", len(pk), schnorr.PubKeyBytesLen)
+		return
+	}
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[Pubkey]))
+	buf.Write(helpers.Hash(pk)[:pubHash])
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToPubkey(idx []byte) (ie *IdxPubkey, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -252,6 +309,26 @@ type IdxPubkeyCreatedAt struct {
 	PubHash   []byte
 	CreatedAt timestamp.Timestamp
 	Serial    []byte
+}
+
+func NewIdxPubkeyCreatedAt(pk []byte, ca timestamp.Timestamp, ser []byte) (idx []byte, err error) {
+	if len(pk) != schnorr.PubKeyBytesLen {
+		err = errorf.E("invalid length for pubkey, got %d require %d", len(pk), schnorr.PubKeyBytesLen)
+		return
+	}
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	caB := make([]byte, createdAt)
+	binary.LittleEndian.PutUint64(caB, uint64(ca))
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[PubkeyCreatedAt]))
+	buf.Write(helpers.Hash(pk)[:pubHash])
+	buf.Write(caB)
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
 }
 
 func IdxToPubkeyCreatedAt(idx []byte) (ie *IdxPubkeyCreatedAt, err error) {
@@ -272,6 +349,21 @@ type IdxCreatedAt struct {
 	Serial    []byte
 }
 
+func NewIdxCreatedAt(ca timestamp.Timestamp, ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	caB := make([]byte, createdAt)
+	binary.LittleEndian.PutUint64(caB, uint64(ca))
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[CreatedAt]))
+	buf.Write(caB)
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToCreatedAt(idx []byte) (ie *IdxCreatedAt, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -289,6 +381,21 @@ type IdxFirstSeen struct {
 	Timestamp timestamp.Timestamp
 }
 
+func NewIdxFirstSeen(ser []byte, fs timestamp.Timestamp) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	fsB := make([]byte, timeStamp)
+	binary.LittleEndian.PutUint64(fsB, uint64(fs))
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[FirstSeen]))
+	buf.Write(fsB)
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToFirstSeen(idx []byte) (ie *IdxFirstSeen, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -304,6 +411,21 @@ func IdxToFirstSeen(idx []byte) (ie *IdxFirstSeen, err error) {
 type IdxKind struct {
 	Kind   int
 	Serial []byte
+}
+
+func NewIdxKind(ki int, ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	kiB := make([]byte, kind)
+	binary.LittleEndian.PutUint16(kiB, uint16(ki))
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[Kind]))
+	buf.Write(kiB)
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
 }
 
 func IdxToKind(idx []byte) (ie *IdxKind, err error) {
@@ -325,6 +447,27 @@ type IdxTagA struct {
 	Serial         []byte
 }
 
+func NewIdxTagA(ki int, pk, identifier, ser []byte) (idx []byte, err error) {
+	if len(pk) != schnorr.PubKeyBytesLen {
+		err = errorf.E("invalid length for pubkey, got %d require %d", len(pk), schnorr.PubKeyBytesLen)
+		return
+	}
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	kiB := make([]byte, kind)
+	binary.LittleEndian.PutUint16(kiB, uint16(ki))
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[TagA]))
+	buf.Write(kiB)
+	buf.Write(helpers.Hash(pk)[:pubHash])
+	buf.Write(helpers.Hash(identifier)[:hash])
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToTagA(idx []byte) (ie *IdxTagA, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -344,6 +487,23 @@ type IdxTagEvent struct {
 	Serial []byte
 }
 
+func NewIdxTagEvent(id, ser []byte) (idx []byte, err error) {
+	if len(id) != 32 {
+		err = errorf.E("invalid length for event id, got %d require %d", len(id), 32)
+		return
+	}
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[TagEvent]))
+	buf.Write(helpers.Hash(id)[:hash])
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToTagEvent(idx []byte) (ie *IdxTagEvent, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -359,6 +519,23 @@ func IdxToTagEvent(idx []byte) (ie *IdxTagEvent, err error) {
 type IdxTagPubkey struct {
 	PubHash []byte
 	Serial  []byte
+}
+
+func NewIdxTagPubkey(pk []byte, ser []byte) (idx []byte, err error) {
+	if len(pk) != schnorr.PubKeyBytesLen {
+		err = errorf.E("invalid length for pubkey, got %d require %d", len(pk), schnorr.PubKeyBytesLen)
+		return
+	}
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[TagPubkey]))
+	buf.Write(helpers.Hash(pk)[:pubHash])
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
 }
 
 func IdxToTagPubkey(idx []byte) (ie *IdxTagPubkey, err error) {
@@ -378,6 +555,19 @@ type IdxTagHashtag struct {
 	Serial  []byte
 }
 
+func NewIdxTagHashtag(ht []byte, ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[TagHashtag]))
+	buf.Write(helpers.Hash(ht)[:pubHash])
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToTagHashtag(idx []byte) (ie *IdxTagHashtag, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -393,6 +583,19 @@ func IdxToTagHashtag(idx []byte) (ie *IdxTagHashtag, err error) {
 type IdxTagIdentifier struct {
 	IdentifierHash []byte
 	Serial         []byte
+}
+
+func NewIdxTagIdentifier(ident, ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[TagIdentifier]))
+	buf.Write(helpers.Hash(ident)[:hash])
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
 }
 
 func IdxToTagIdentifier(idx []byte) (ie *IdxTagIdentifier, err error) {
@@ -413,6 +616,20 @@ type IdxTagLetter struct {
 	Serial    []byte
 }
 
+func NewIdxTagLetter(let byte, val []byte, ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[TagLetter]))
+	buf.Write([]byte{let})
+	buf.Write(helpers.Hash(val)[:hash])
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToTagLetter(idx []byte) (ie *IdxTagLetter, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -430,6 +647,18 @@ type IdxTagProtected struct {
 	Serial []byte
 }
 
+func NewIdxTagProtected(ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[TagProtected]))
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToTagProtected(idx []byte) (ie *IdxTagProtected, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -445,6 +674,20 @@ type IdxTagNonstandard struct {
 	KeyHash   []byte
 	ValueHash []byte
 	Serial    []byte
+}
+
+func NewIdxTagNonstandard(key, val []byte, ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[TagNonstandard]))
+	buf.Write(helpers.Hash(key)[:hash])
+	buf.Write(helpers.Hash(val)[:hash])
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
 }
 
 func IdxToTagNonstandard(idx []byte) (ie *IdxTagNonstandard, err error) {
@@ -466,6 +709,22 @@ type IdxFullTextWord struct {
 	Serial  []byte
 }
 
+func NewIdxFulltextWord(word []byte, wordPos uint32, ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	wpB := make([]byte, kind)
+	binary.LittleEndian.PutUint32(wpB, wordPos)
+	buf := new(bytes.Buffer)
+	buf.Write([]byte(Prefix[FulltextWord]))
+	buf.Write(word)
+	buf.Write(wpB)
+	buf.Write(ser)
+	idx = buf.Bytes()
+	return
+}
+
 func IdxToFullTextWord(idx []byte) (ie *IdxFullTextWord, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -483,6 +742,15 @@ type IdxLastAccessed struct {
 	Serial []byte
 }
 
+func NewIdxLastAccessed(ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	idx = append([]byte(Prefix[LastAccessed]), ser...)
+	return
+}
+
 func IdxToLastAccessed(idx []byte) (ie *IdxLastAccessed, err error) {
 	var segments [][]byte
 	if segments, err = SplitIndex(idx); chk.E(err) {
@@ -496,6 +764,15 @@ func IdxToLastAccessed(idx []byte) (ie *IdxLastAccessed, err error) {
 
 type IdxAccessCounter struct {
 	Serial []byte
+}
+
+func NewIdxAccessCounter(ser []byte) (idx []byte, err error) {
+	if len(ser) != serial {
+		err = errorf.E("invalid length for serial, got %d require %d", len(ser), serial)
+		return
+	}
+	idx = append([]byte(Prefix[AccessCounter]), ser...)
+	return
 }
 
 func IdxToAccessCounter(idx []byte) (ie *IdxAccessCounter, err error) {

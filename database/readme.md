@@ -68,7 +68,7 @@ all keys further contain the database serial (sequence number) as the last 8 byt
   this enables fast hashtag searches
 
 
-- `t` - tag for other letters (literally the letter), 8 bytes truncated hash of value
+- `t*` - tag for other letters (literally the letter), 8 bytes truncated hash of value
 
   all other tags, with a distinguishable value compactly encoded
 

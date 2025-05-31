@@ -6,10 +6,9 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/minio/sha256-simd"
-
 	"x.realy.lol/chk"
 	"x.realy.lol/errorf"
+	"x.realy.lol/helpers"
 	"x.realy.lol/hex"
 	"x.realy.lol/log"
 	"x.realy.lol/p256k"
@@ -116,7 +115,7 @@ func (ev *E) ToCanonical(dst []byte) (b []byte) {
 func (ev *E) GenIdBytes() (b []byte) {
 	var can []byte
 	can = ev.ToCanonical(can)
-	return Hash(can)
+	return helpers.Hash(can)
 }
 
 func (ev *E) GetIdBytes() (i []byte) {
@@ -145,20 +144,13 @@ func (ev *E) GetPubkeyBytes() (p []byte) {
 
 func (ev *E) IdHex() (idHex string) {
 	can := ev.ToCanonical(nil)
-	idHex = hex.Enc(Hash(can))
+	idHex = hex.Enc(helpers.Hash(can))
 	return
 }
 
 func (ev *E) CheckId() (ok bool) {
 	idHex := ev.IdHex()
 	return idHex == ev.Id
-}
-
-// Hash is a little helper generate a hash and return a slice instead of an
-// array.
-func Hash(in []byte) (out []byte) {
-	h := sha256.Sum256(in)
-	return h[:]
 }
 
 // this is an absolute minimum length canonical encoded event
