@@ -17,6 +17,9 @@ all keys further contain the database serial (sequence number) as the last 8 byt
   these override any other filter
 
 
+- `fi` - full index: full event id, pubkey truncated hash, kind and created_at, enabling identifying and filtering search results to return only the event id of a match while enabling filtering by timestamp and allowing the exclusion of matches based on a user's mute list
+
+
 - `pc` - public key, created at - varint encoded (ltr encoder)
 
   these index all events associated to a pubkey, easy to pick by timestamp
