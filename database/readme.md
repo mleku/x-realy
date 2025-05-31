@@ -58,6 +58,11 @@ all keys further contain the database serial (sequence number) as the last 8 byt
   these are references to another user
 
 
+- `td` - identifier - 8 byte truncated hash of identifier string
+
+  these are labels used with parameterized replaceable events to create a namespace.
+
+
 - `tt` - hashtag - 8 bytes hash of full hashtag
 
   this enables fast hashtag searches
