@@ -20,6 +20,9 @@ all keys further contain the database serial (sequence number) as the last 8 byt
 - `fi` - full index: full event id, pubkey truncated hash, kind and created_at, enabling identifying and filtering search results to return only the event id of a match while enabling filtering by timestamp and allowing the exclusion of matches based on a user's mute list
 
 
+- `pk` - public key - truncated 8 byte hash of public key
+
+
 - `pc` - public key, created at - varint encoded (ltr encoder)
 
   these index all events associated to a pubkey, easy to pick by timestamp
@@ -28,6 +31,11 @@ all keys further contain the database serial (sequence number) as the last 8 byt
 - `ca` - created_at timestamp - varint encoded (ltr encoder)
 
   these timestamps are not entirely reliable but a since/until filter these are sequential
+
+
+- `fs` - index that stores the timestamp when the event was received
+
+  this enables search by first-seen
 
 
 - `ki` - kind, created_at - 2 bytes kind, varint encoded created_at
@@ -55,7 +63,7 @@ all keys further contain the database serial (sequence number) as the last 8 byt
   this enables fast hashtag searches
 
 
-- `t*` - tag for other letters (literally the letter), 8 bytes hash of value
+- `t` - tag for other letters (literally the letter), 8 bytes truncated hash of value
 
   all other tags, with a distinguishable value compactly encoded
 
@@ -70,9 +78,10 @@ all keys further contain the database serial (sequence number) as the last 8 byt
   this in fact enables search by other tags but this is not exposed in filter syntax
 
 
-- `w` - fulltext search index - the whole word follows, serial is last 8 bytes
+- `fw` - fulltext search index - the whole word follows, serial is last 8 bytes
 
   when searching, whole match has no prefix, * for contains ^ for prefix $ suffix
+
 
 - `la` - serial, value is last accessed timestamp
 
