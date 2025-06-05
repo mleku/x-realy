@@ -13,7 +13,6 @@ import (
 	"x.realy.lol/ec/schnorr"
 	"x.realy.lol/indexes/prefixes"
 	"x.realy.lol/indexes/types/prefix"
-	"x.realy.lol/log"
 )
 
 func TestEvent(t *testing.T) {
@@ -31,7 +30,6 @@ func TestEvent(t *testing.T) {
 		if err = evIdx2.UnmarshalRead(buf2); chk.E(err) {
 			t.Fatal(err)
 		}
-		log.I.F("%d == %d", ser.ToSerial(), ser2.ToSerial())
 		if ser.ToSerial() != ser2.ToSerial() {
 			t.Fatal("failed to recover same value as input")
 		}
@@ -117,7 +115,6 @@ func TestFullIndex(t *testing.T) {
 		if ca.ToTimestamp() != ca2.ToTimestamp() {
 			t.Fatal("failed to recover same value as input")
 		}
-		t.Fatal("failed to recover same value as input")
 	}
 }
 
