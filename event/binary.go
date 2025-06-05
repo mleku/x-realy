@@ -25,7 +25,7 @@ import (
 //
 // [ varint Content length ]
 // [ 64 bytes Sig ]
-func (ev *E) MarshalBinary(w io.Writer) {
+func (ev *E) MarshalWrite(w io.Writer) {
 	_, _ = w.Write(ev.GetIdBytes())
 	_, _ = w.Write(ev.GetPubkeyBytes())
 	varint.Encode(w, uint64(ev.CreatedAt))
@@ -44,7 +44,7 @@ func (ev *E) MarshalBinary(w io.Writer) {
 	return
 }
 
-func (ev *E) UnmarshalBinary(r io.Reader) (err error) {
+func (ev *E) UnmarshalRead(r io.Reader) (err error) {
 	id := make([]byte, 32)
 	if _, err = r.Read(id); chk.E(err) {
 		return

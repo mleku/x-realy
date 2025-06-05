@@ -1,4 +1,4 @@
-package serial
+package size
 
 import (
 	"encoding/binary"
@@ -7,28 +7,29 @@ import (
 	"x.realy.lol/errorf"
 )
 
-const Len = 8
+const Len = 4
 
 type T struct{ val []byte }
 
 func New() (s *T) { return &T{make([]byte, Len)} }
 
-func (s *T) FromSerial(ser uint64) {
-	binary.LittleEndian.PutUint64(s.val, ser)
+func (s *T) FromUint32(n uint32) {
+	s.val = make([]byte, Len)
+	binary.LittleEndian.PutUint32(s.val, n)
 	return
 }
 
-func FromBytes(ser []byte) (s *T, err error) {
-	if len(ser) != Len {
-		err = errorf.E("serial must be %d bytes long, got %d", Len, len(ser))
+func FromBytes(val []byte) (s *T, err error) {
+	if len(val) != Len {
+		err = errorf.E("size must be %d bytes long, got %d", Len, len(val))
 		return
 	}
-	s = &T{val: ser}
+	s = &T{val: val}
 	return
 }
 
-func (s *T) ToSerial() (ser uint64) {
-	ser = binary.LittleEndian.Uint64(s.val)
+func (s *T) ToUint32() (ser uint32) {
+	ser = binary.LittleEndian.Uint32(s.val)
 	return
 }
 

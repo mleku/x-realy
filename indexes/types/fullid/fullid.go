@@ -10,13 +10,13 @@ import (
 
 const Len = sha256.Size
 
-type t struct {
+type T struct {
 	val []byte
 }
 
-func New() (fi *t) { return &t{make([]byte, Len)} }
+func New() (fi *T) { return &T{make([]byte, Len)} }
 
-func (fi *t) FromId(id []byte) (err error) {
+func (fi *T) FromId(id []byte) (err error) {
 	if len(id) != Len {
 		err = errorf.E("invalid Id length, got %d require %d", len(id), Len)
 		return
@@ -24,11 +24,11 @@ func (fi *t) FromId(id []byte) (err error) {
 	fi.val = id
 	return
 }
-func (fi *t) Bytes() (b []byte) { return fi.val }
+func (fi *T) Bytes() (b []byte) { return fi.val }
 
-func (fi *t) MarshalBinary(w io.Writer) { _, _ = w.Write(fi.val) }
+func (fi *T) MarshalWrite(w io.Writer) { _, _ = w.Write(fi.val) }
 
-func (fi *t) UnmarshalBinary(r io.Reader) (err error) {
+func (fi *T) UnmarshalRead(r io.Reader) (err error) {
 	if len(fi.val) < Len {
 		fi.val = make([]byte, Len)
 	} else {

@@ -1,11 +1,8 @@
-package idhash
+package identhash
 
 import (
 	"io"
 
-	"github.com/minio/sha256-simd"
-
-	"x.realy.lol/errorf"
 	"x.realy.lol/helpers"
 )
 
@@ -15,11 +12,7 @@ type T struct{ val []byte }
 
 func New() (i *T) { return &T{make([]byte, Len)} }
 
-func (i *T) FromId(id []byte) (err error) {
-	if len(id) != sha256.Size {
-		err = errorf.E("invalid Id length, got %d require %d", len(id), sha256.Size)
-		return
-	}
+func (i *T) FromIdent(id []byte) (err error) {
 	i.val = helpers.Hash(id)[:Len]
 	return
 }

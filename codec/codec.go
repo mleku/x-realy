@@ -5,6 +5,6 @@ import (
 )
 
 type I interface {
-	MarshalBinary(w io.Writer)
-	UnmarshalBinary(r io.Reader) (err error)
+	MarshalWrite(w io.Writer)
+	UnmarshalRead(r io.Reader) (err error)
 }

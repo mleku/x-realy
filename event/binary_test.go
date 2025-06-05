@@ -29,9 +29,9 @@ func TestTMarshalBinary_UnmarshalBinary(t *testing.T) {
 			t.Fatalf("some of input remaining after marshal/unmarshal: '%s'",
 				rem)
 		}
-		ea.MarshalBinary(buf)
+		ea.MarshalWrite(buf)
 		buf2 := bytes.NewBuffer(buf.Bytes())
-		if err = eb.UnmarshalBinary(buf2); chk.E(err) {
+		if err = eb.UnmarshalRead(buf2); chk.E(err) {
 			t.Fatal(err)
 		}
 		counter++

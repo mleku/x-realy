@@ -1,8 +1,12 @@
 package prefixes
 
-type I string
+import (
+	"io"
+)
 
-func (i I) B() []byte { return []byte(i) }
+const Len = 2
+
+type I string
 
 // the following enumerations are separate from the prefix value for simpler reference.
 
@@ -57,7 +61,7 @@ const (
 	// TagA is an index of `a` tags, which contain kind, pubkey and hash of an arbitrary
 	// text, used to create an abstract reference for a multiplicity of replaceable event with a
 	// kind number. These labels also appear as `d` tags in inbound references, see
-	// IdxTagLetter.
+	// IdxTagIdentifier.
 	//
 	// [ prefix ][ 2 bytes kind number ][ 8 bytes hash of pubkey ][ 8 bytes hash of label ][ serial]
 	TagA
@@ -126,27 +130,87 @@ const (
 	AccessCounter
 )
 
-// Prefix is a map of the constant names above to the two byte prefix string of an index
-// prefix.
-var Prefix = map[int]I{
-	Event:           "ev",
-	Config:          "cf",
-	Id:              "id",
-	FullIndex:       "fi",
-	Pubkey:          "pk",
-	PubkeyCreatedAt: "pc",
-	CreatedAt:       "ca",
-	FirstSeen:       "fs",
-	Kind:            "ki",
-	TagA:            "ta",
-	TagEvent:        "te",
-	TagPubkey:       "tp",
-	TagHashtag:      "tt",
-	TagIdentifier:   "td",
-	TagLetter:       "t*",
-	TagProtected:    "t-",
-	TagNonstandard:  "t?",
-	FulltextWord:    "fw",
-	LastAccessed:    "la",
-	AccessCounter:   "ac",
+func (i I) Write(w io.Writer) (n int, err error) { return w.Write([]byte(i)) }
+
+// func Identify(r io.Reader) (i int, err error) {
+// 	var prefixes = map[I]int{
+// 		"ev": Event,
+// 		"cf": Config,
+// 		"id": Id,
+// 		"fi": FullIndex,
+// 		"pk": Pubkey,
+// 		"pc": PubkeyCreatedAt,
+// 		"ca": CreatedAt,
+// 		"fs": FirstSeen,
+// 		"ki": Kind,
+// 		"ta": TagA,
+// 		"te": TagEvent,
+// 		"tp": TagPubkey,
+// 		"tt": TagHashtag,
+// 		"td": TagIdentifier,
+// 		"t*": TagLetter,
+// 		"t-": TagProtected,
+// 		"t?": TagNonstandard,
+// 		"fw": FulltextWord,
+// 		"la": LastAccessed,
+// 		"ac": AccessCounter,
+// 	}
+// 	b := make([]byte, Len)
+// 	if _, err = r.Read(b); chk.E(err) {
+// 		return
+// 	}
+// 	s := string(b)
+// 	for ii, v := range prefixes {
+// 		if ii == I(s) {
+// 			return v, nil
+// 		}
+// 	}
+// 	err = errorf.E("no match to known prefix '%s'", s)
+// 	return
+// }
+
+func Prefix(prf int) (i I) {
+	switch prf {
+	case Event:
+		return "ev"
+	case Config:
+		return "cf"
+	case Id:
+		return "id"
+	case FullIndex:
+		return "fi"
+	case Pubkey:
+		return "pk"
+	case PubkeyCreatedAt:
+		return "pc"
+	case CreatedAt:
+		return "ca"
+	case FirstSeen:
+		return "fs"
+	case Kind:
+		return "ki"
+	case TagA:
+		return "ta"
+	case TagEvent:
+		return "te"
+	case TagPubkey:
+		return "tp"
+	case TagHashtag:
+		return "tt"
+	case TagIdentifier:
+		return "td"
+	case TagLetter:
+		return "t*"
+	case TagProtected:
+		return "t-"
+	case TagNonstandard:
+		return "t?"
+	case FulltextWord:
+		return "fw"
+	case LastAccessed:
+		return "la"
+	case AccessCounter:
+		return "ac"
+	}
+	return
 }

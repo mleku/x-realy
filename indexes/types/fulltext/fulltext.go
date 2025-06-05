@@ -7,25 +7,22 @@ import (
 	"x.realy.lol/varint"
 )
 
-type t struct {
+type T struct {
 	val []byte
 }
 
-func New() (ft *t) { return &t{} }
+func New() (ft *T) { return &T{} }
 
-func FromWord(word []byte) (ft *t, err error) {
-	ft = &t{val: word}
-	return
-}
+func (ft *T) FromWord(word []byte) { ft.val = word }
 
-func (ft *t) Bytes() (b []byte) { return ft.val }
+func (ft *T) Bytes() (b []byte) { return ft.val }
 
-func (ft *t) MarshalBinary(w io.Writer) {
+func (ft *T) MarshalWrite(w io.Writer) {
 	varint.Encode(w, uint64(len(ft.val)))
 	_, _ = w.Write(ft.val)
 }
 
-func (ft *t) UnmarshalBinary(r io.Reader) (err error) {
+func (ft *T) UnmarshalRead(r io.Reader) (err error) {
 	var l uint64
 	if l, err = varint.Decode(r); chk.E(err) {
 		return

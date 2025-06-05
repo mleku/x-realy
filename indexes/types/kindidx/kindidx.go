@@ -9,32 +9,37 @@ import (
 
 const Len = 2
 
-type t struct{ val []byte }
+type T struct{ val []byte }
 
-func FromKind(kind int) (k *t) {
-	k = &t{val: make([]byte, Len)}
+func FromKind(kind int) (k *T) {
+	k = &T{val: make([]byte, Len)}
 	binary.LittleEndian.PutUint16(k.val, uint16(kind))
 	return
 }
 
-func FromBytes(kindBytes []byte) (k *t, err error) {
+func FromBytes(kindBytes []byte) (k *T, err error) {
 	if len(kindBytes) != Len {
 		err = errorf.E("kind must be %d bytes long, got %d", Len, len(kindBytes))
 		return
 	}
-	k = &t{val: kindBytes}
+	k = &T{val: kindBytes}
 	return
 }
 
-func (k *t) ToKind() (kind int) {
+func (k *T) Set(ki int) {
+	kk := FromKind(ki)
+	k.val = kk.val
+}
+
+func (k *T) ToKind() (kind int) {
 	kind = int(binary.LittleEndian.Uint16(k.val))
 	return
 }
-func (k *t) Bytes() (b []byte) { return k.val }
+func (k *T) Bytes() (b []byte) { return k.val }
 
-func (k *t) MarshalBinary(w io.Writer) { _, _ = w.Write(k.val) }
+func (k *T) MarshalWrite(w io.Writer) { _, _ = w.Write(k.val) }
 
-func (k *t) UnmarshalBinary(r io.Reader) (err error) {
+func (k *T) UnmarshalRead(r io.Reader) (err error) {
 	if len(k.val) < Len {
 		k.val = make([]byte, Len)
 	} else {
