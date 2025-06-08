@@ -22,7 +22,7 @@ type E struct {
 	Id        string              `json:"id"`
 	Pubkey    string              `json:"pubkey"`
 	CreatedAt timestamp.Timestamp `json:"created_at"`
-	Kind      int                 `json:"kind`
+	Kind      int                 `json:"kind"`
 	Tags      tags.Tags           `json:"tags"`
 	Content   string              `json:"content"`
 	Sig       string              `json:"sig"`
@@ -30,14 +30,45 @@ type E struct {
 
 func New() (ev *E) { return &E{} }
 
-func (ev *E) Marshal() (b []byte, err error) {
-	if b, err = json.Marshal(ev); chk.E(err) {
+func (ev *E) IdBytes() (idBytes []byte, err error) {
+	if idBytes, err = hex.Dec(ev.Id); chk.E(err) {
 		return
 	}
 	return
 }
 
+func (ev *E) PubBytes() (pubBytes []byte, err error) {
+	if pubBytes, err = hex.Dec(ev.Pubkey); chk.E(err) {
+		return
+	}
+	return
+}
+
+func (ev *E) SigBytes() (sigBytes []byte, err error) {
+	if sigBytes, err = hex.Dec(ev.Sig); chk.E(err) {
+		return
+	}
+	return
+}
+
+func (ev *E) Marshal() (b []byte, err error) {
+	if ev == nil {
+		panic("cannot marshal a nil event")
+	}
+	if b, err = json.Marshal(ev); chk.E(err) {
+		return
+	}
+	// there is a problem with some specific characters here
+	b = bytes.ReplaceAll(b, []byte("\\u0026"), []byte("&"))
+	return
+}
+
 func (ev *E) Unmarshal(b []byte) (err error) {
+	if ev == nil {
+		panic("cannot unmarshal into a nil event")
+	}
+	// there is a problem with some specific characters here
+	b = bytes.ReplaceAll(b, []byte("\\u0026"), []byte("&"))
 	if err = json.Unmarshal(b, ev); chk.E(err) {
 		return
 	}
@@ -48,9 +79,14 @@ func (ev *E) Unmarshal(b []byte) (err error) {
 // logging.
 func (ev *E) Serialize() (b []byte) {
 	var err error
+	if len(ev.Tags) == 1 && len(ev.Tags[0]) == 1 {
+		ev.Tags = ev.Tags[:0]
+	}
 	if b, err = json.Marshal(ev); chk.E(err) {
 		return
 	}
+	// there is a problem with some specific characters here
+	b = bytes.ReplaceAll(b, []byte("\\u0026"), []byte("&"))
 	return
 }
 
@@ -80,7 +116,7 @@ func (ev *E) Verify() (valid bool, err error) {
 		// check that this isn't because of a bogus Id
 		id := ev.GenIdBytes()
 		if !bytes.Equal(id, ev.GetIdBytes()) {
-			log.E.Ln("event Id incorrect")
+			log.E.F("event Id incorrect\n%s\n%s", ev.Serialize(), ev.ToCanonical(nil))
 			ev.Id = hex.Enc(id)
 			err = nil
 			if valid, err = keys.Verify(ev.GetIdBytes(), ev.GetSigBytes()); chk.E(err) {

@@ -5,6 +5,6 @@ import (
 )
 
 type I interface {
-	MarshalWrite(w io.Writer)
+	MarshalWrite(w io.Writer) (err error)
 	UnmarshalRead(r io.Reader) (err error)
 }

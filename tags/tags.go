@@ -7,7 +7,10 @@ import (
 	"slices"
 	"strings"
 
+	"x.realy.lol/chk"
 	"x.realy.lol/helpers"
+	"x.realy.lol/hex"
+	"x.realy.lol/ints"
 	"x.realy.lol/normalize"
 )
 
@@ -106,6 +109,18 @@ func (tags Tags) GetAll(tagPrefix []string) Tags {
 	return result
 }
 
+func (tags Tags) GetAllExactKeys(key string) Tags {
+	result := make(Tags, 0, len(tags))
+	for _, v := range tags {
+		if v.StartsWith([]string{key}) {
+			if v.Key() == key {
+				result = append(result, v)
+			}
+		}
+	}
+	return result
+}
+
 // All returns an iterator for all the tags that match the prefix, see [Tag.StartsWith]
 func (tags Tags) All(tagPrefix []string) iter.Seq2[int, Tag] {
 	return func(yield func(int, Tag) bool) {
@@ -131,17 +146,18 @@ func (tags Tags) FilterOut(tagPrefix []string) Tags {
 }
 
 // FilterOutInPlace removes all tags that match the prefix, but potentially reorders the tags in unpredictable ways, see [Tag.StartsWith]
-func (tags *Tags) FilterOutInPlace(tagPrefix []string) {
-	for i := 0; i < len(*tags); i++ {
-		tag := (*tags)[i]
+func (tags Tags) FilterOutInPlace(tagPrefix []string) (t Tags) {
+	for i := 0; i < len(tags); i++ {
+		tag := (tags)[i]
 		if tag.StartsWith(tagPrefix) {
 			// remove this by swapping the last tag into this place
-			last := len(*tags) - 1
-			(*tags)[i] = (*tags)[last]
-			*tags = (*tags)[0:last]
+			last := len(tags) - 1
+			(tags)[i] = (tags)[last]
+			tags = (tags)[0:last]
 			i-- // this is so we can match this just swapped item in the next iteration
 		}
 	}
+	return tags
 }
 
 // AppendUnique appends a tag if it doesn't exist yet, otherwise does nothing.
@@ -158,7 +174,7 @@ func (tags Tags) AppendUnique(tag Tag) Tags {
 	return tags
 }
 
-func (t *Tags) Scan(src any) error {
+func (tags Tags) Scan(src any) (t Tags, err error) {
 	var jtags []byte
 
 	switch v := src.(type) {
@@ -167,11 +183,11 @@ func (t *Tags) Scan(src any) error {
 	case string:
 		jtags = []byte(v)
 	default:
-		return errors.New("couldn't scan tags, it's not a json string")
+		err = errors.New("couldn't scan tags, it's not a json string")
+		return
 	}
-
-	json.Unmarshal(jtags, &t)
-	return nil
+	err = json.Unmarshal(jtags, &tags)
+	return
 }
 
 func (tags Tags) ContainsAny(tagName string, values []string) bool {
@@ -217,4 +233,47 @@ func (tags Tags) marshalTo(dst []byte) []byte {
 	}
 	dst = append(dst, ']')
 	return dst
+}
+
+type Tag_a struct {
+	Kind   int
+	Pubkey []byte
+	Ident  string
+}
+
+func (tags Tags) Get_a_Tags() (atags []Tag_a) {
+	a := tags.GetAll([]string{"a"})
+	var err error
+	if len(a) > 0 {
+		for _, v := range a {
+			if v[0] == "a" && len(v) > 1 {
+				// try to split it
+				parts := strings.Split(v[1], ":")
+				// there must be a kind first
+				ki := ints.New(0)
+				if _, err = ki.Unmarshal([]byte(parts[0])); chk.E(err) {
+					continue
+				}
+				atag := Tag_a{
+					Kind: int(ki.Uint16()),
+				}
+				if len(parts) < 2 {
+					continue
+				}
+				// next must be a pubkey
+				var pk []byte
+				if pk, err = hex.Dec(parts[1]); chk.E(err) {
+					continue
+				}
+				atag.Pubkey = pk
+				// there possibly can be nothing after this
+				if len(parts) >= 3 {
+					// third part is the identifier (d tag)
+					atag.Ident = parts[2]
+				}
+				atags = append(atags, atag)
+			}
+		}
+	}
+	return
 }
