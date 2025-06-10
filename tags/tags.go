@@ -261,7 +261,7 @@ func (tags Tags) Get_a_Tags() (atags []Tag_a) {
 				}
 				// next must be a pubkey
 				var pk []byte
-				if pk, err = hex.Dec(parts[1]); chk.E(err) {
+				if pk, err = hex.Dec(parts[1]); err != nil {
 					continue
 				}
 				atag.Pubkey = pk

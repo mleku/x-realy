@@ -88,7 +88,7 @@ func TestGetEventIndexes(t *testing.T) {
 		// check the event encodes to binary, decodes, and produces the identical canonical form
 		binE := new(bytes.Buffer)
 		if err = ev.MarshalWrite(binE); chk.E(err) {
-			// log.I.F("bogus tags probably: %s", b)
+			log.I.F("bogus tags probably: %s", b)
 			encErrs++
 			// events that marshal with errors have e and p tag values that aren't hex and should not be accepted
 			continue

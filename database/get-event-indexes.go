@@ -164,6 +164,9 @@ func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, ser *varint.V, err e
 			continue
 		}
 		ph := pubhash.New()
+		if len(pkb) == 0 {
+			continue
+		}
 		if err = ph.FromPubkey(pkb); chk.E(err) {
 			err = nil
 			continue

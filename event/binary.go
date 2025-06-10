@@ -5,7 +5,6 @@ import (
 
 	"x.realy.lol/chk"
 	"x.realy.lol/ec/schnorr"
-	"x.realy.lol/errorf"
 	"x.realy.lol/hex"
 	"x.realy.lol/timestamp"
 	"x.realy.lol/varint"
@@ -49,14 +48,20 @@ func (ev *E) MarshalWrite(w io.Writer) (err error) {
 		for i, y := range x {
 			if i == 1 && isBin {
 				var b []byte
-				b, err = hex.Dec(y)
-				if err != nil {
-					err = errorf.E("e or p tag value not hex: %s", err.Error())
-					return
-				}
-				if len(b) != 32 {
-					err = errorf.E("e or p tag value with invalid decoded byte length %d", len(b))
-					return
+				if b, err = hex.Dec(y); err != nil {
+					b = []byte(y)
+					// non-hex "p" or "e" tags have a 1 prefix to indicate not to hex decode.
+					_, _ = w.Write([]byte{1})
+					err = nil
+				} else {
+					if len(b) != 32 {
+						// err = errorf.E("e or p tag value with invalid decoded byte length %d '%0x'", len(b), b)
+						b = []byte(y)
+						_, _ = w.Write([]byte{1})
+					} else {
+						// hex values have a 2 prefix
+						_, _ = w.Write([]byte{2})
+					}
 				}
 				varint.Encode(w, uint64(len(b)))
 				_, _ = w.Write(b)
@@ -111,6 +116,14 @@ func (ev *E) UnmarshalRead(r io.Reader) (err error) {
 		var t []string
 		var isBin bool
 		for i := range nField {
+			var pr byte
+			if i == 1 && isBin {
+				prf := make([]byte, 1)
+				if _, err = r.Read(prf); chk.E(err) {
+					return
+				}
+				pr = prf[0]
+			}
 			var lenField uint64
 			if lenField, err = varint.Decode(r); chk.E(err) {
 				return
@@ -119,16 +132,18 @@ func (ev *E) UnmarshalRead(r io.Reader) (err error) {
 			if _, err = r.Read(field); chk.E(err) {
 				return
 			}
-			// if it is first field, length 1 and is e or p, the value field must be binary
+			// if it is first field, length 1 and is e or p, the value field should be binary
 			if i == 0 && len(field) == 1 && (field[0] == 'e' || field[0] == 'p') {
 				isBin = true
 			}
 			if i == 1 && isBin {
-				// this is a binary value, was an e or p tag key, 32 bytes long, encode value
-				// field to hex
-				f := make([]byte, 64)
-				_ = hex.EncBytes(f, field)
-				field = f
+				if pr == 2 {
+					// this is a binary value, was an e or p tag key, 32 bytes long, encode
+					// value field to hex
+					f := make([]byte, 64)
+					_ = hex.EncBytes(f, field)
+					field = f
+				}
 			}
 			t = append(t, string(field))
 		}

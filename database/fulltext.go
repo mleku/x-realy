@@ -63,7 +63,7 @@ func (d *D) GetWordsFromContent(ev *event.E) (wordMap map[string]int) {
 				!IsEntity(w) &&
 				!bytes.Contains(w, []byte(".")) {
 				if len(w) == 64 || len(w) == 128 {
-					if _, err := hex.Dec(string(w)); !chk.E(err) {
+					if _, err := hex.Dec(string(w)); err == nil {
 						continue
 					}
 				}

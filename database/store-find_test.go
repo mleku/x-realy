@@ -50,7 +50,7 @@ func TestD_StoreEvent(t *testing.T) {
 		count++
 		if count%1000 == 0 {
 			log.I.F("unmarshaled %d events", count)
-			break
+			// break
 		}
 		if err = d.StoreEvent(ev); chk.E(err) {
 			continue
