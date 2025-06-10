@@ -10,26 +10,25 @@ import (
 	"x.realy.lol/chk"
 	"x.realy.lol/database/indexes"
 	"x.realy.lol/database/indexes/types/fulltext"
-	"x.realy.lol/database/indexes/types/serial"
-	"x.realy.lol/database/indexes/types/size"
+	"x.realy.lol/database/indexes/types/varint"
 	"x.realy.lol/event"
 	"x.realy.lol/hex"
 	"x.realy.lol/kind"
 )
 
 type Words struct {
-	ser     *serial.S
+	ser     *varint.V
 	ev      *event.E
 	wordMap map[string]int
 }
 
-func (d *D) GetFulltextKeys(ev *event.E, ser *serial.S) (keys [][]byte, err error) {
+func (d *D) GetFulltextKeys(ev *event.E, ser *varint.V) (keys [][]byte, err error) {
 	w := d.GetWordsFromContent(ev)
 	for i := range w {
 		ft := fulltext.New()
 		ft.FromWord([]byte(i))
-		pos := size.New()
-		pos.FromUint32(uint32(w[i]))
+		pos := varint.New()
+		pos.FromInteger(uint64(w[i]))
 		buf := new(bytes.Buffer)
 		if err = indexes.FullTextWordEnc(ft, pos, ser).MarshalWrite(buf); chk.E(err) {
 			return

@@ -12,8 +12,8 @@ import (
 	"x.realy.lol/database/indexes/types/kindidx"
 	"x.realy.lol/database/indexes/types/letter"
 	"x.realy.lol/database/indexes/types/pubhash"
-	"x.realy.lol/database/indexes/types/serial"
 	"x.realy.lol/database/indexes/types/timestamp"
+	"x.realy.lol/database/indexes/types/varint"
 	"x.realy.lol/event"
 	"x.realy.lol/hex"
 	"x.realy.lol/tags"
@@ -21,15 +21,15 @@ import (
 
 // GetEventIndexes generates a set of indexes for a new event record. The first record is the
 // key that should have the binary encoded event as its value.
-func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, ser *serial.S, err error) {
+func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, ser *varint.V, err error) {
 	// log.I.F("getting event indices for\n%s", ev.Serialize())
 	// get a new serial
-	ser = serial.New()
+	ser = varint.New()
 	var s uint64
 	if s, err = d.Serial(); chk.E(err) {
 		return
 	}
-	ser.FromSerial(s)
+	ser.FromInteger(s)
 	// create the event id key
 	id := idhash.New()
 	var idb []byte
@@ -61,7 +61,7 @@ func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, ser *serial.S, err e
 	ca := &timestamp.T{}
 	ca.FromInt64(int64(ev.CreatedAt))
 	evIFiB := new(bytes.Buffer)
-	if err = indexes.FullIndexEnc(fid, p, ki, ca, ser).MarshalWrite(evIFiB); chk.E(err) {
+	if err = indexes.FullIndexEnc(ser, fid, p, ki, ca).MarshalWrite(evIFiB); chk.E(err) {
 		return
 	}
 	indices = append(indices, evIFiB.Bytes())
@@ -97,6 +97,18 @@ func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, ser *serial.S, err e
 		return
 	}
 	indices = append(indices, evIKiB.Bytes())
+	// Kind index
+	evIKcB := new(bytes.Buffer)
+	if err = indexes.KindCreatedAtEnc(ki, ca, ser).MarshalWrite(evIKcB); chk.E(err) {
+		return
+	}
+	indices = append(indices, evIKcB.Bytes())
+	// Kind index
+	evIKpB := new(bytes.Buffer)
+	if err = indexes.KindPubkeyCreatedAtEnc(ki, p, ca, ser).MarshalWrite(evIKpB); chk.E(err) {
+		return
+	}
+	indices = append(indices, evIKpB.Bytes())
 	// tags
 	// TagA index
 	var atags []tags.Tag_a

@@ -6,8 +6,8 @@ import (
 
 	"x.realy.lol/chk"
 	"x.realy.lol/database/indexes"
-	"x.realy.lol/database/indexes/types/serial"
 	"x.realy.lol/database/indexes/types/timestamp"
+	"x.realy.lol/database/indexes/types/varint"
 	"x.realy.lol/errorf"
 	"x.realy.lol/event"
 )
@@ -24,7 +24,7 @@ func (d *D) StoreEvent(ev *event.E) (err error) {
 			return
 		}
 	}
-	var ser *serial.S
+	var ser *varint.V
 	var idxs [][]byte
 	if idxs, ser, err = d.GetEventIndexes(ev); chk.E(err) {
 		return
@@ -61,7 +61,7 @@ func (d *D) StoreEvent(ev *event.E) (err error) {
 	if err = indexes.AccessCounterEnc(ser).MarshalWrite(acI); chk.E(err) {
 		return
 	}
-	ac := serial.New()
+	ac := varint.New()
 	if err = d.Set(acI.Bytes(), ac.Bytes()); chk.E(err) {
 		return
 	}

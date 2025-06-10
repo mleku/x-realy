@@ -13,13 +13,14 @@ import (
 	"x.realy.lol/database/indexes/prefixes"
 	"x.realy.lol/database/indexes/types/prefix"
 	"x.realy.lol/ec/schnorr"
+	"x.realy.lol/log"
 )
 
 func TestEvent(t *testing.T) {
 	var err error
 	for range 100 {
 		ser := EventVars()
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		evIdx := EventEnc(ser)
 		evIdx.MarshalWrite(buf)
@@ -30,7 +31,7 @@ func TestEvent(t *testing.T) {
 		if err = evIdx2.UnmarshalRead(buf2); chk.E(err) {
 			t.Fatal(err)
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -58,7 +59,7 @@ func TestId(t *testing.T) {
 		if err = id.FromId(frand.Bytes(sha256.Size)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		evIdx := IdEnc(id, ser)
 		evIdx.MarshalWrite(buf)
@@ -72,7 +73,7 @@ func TestId(t *testing.T) {
 		if !bytes.Equal(id.Bytes(), id2.Bytes()) {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -81,7 +82,7 @@ func TestId(t *testing.T) {
 func TestFullIndex(t *testing.T) {
 	var err error
 	for range 100 {
-		id, p, ki, ca, ser := FullIndexVars()
+		ser, id, p, ki, ca := FullIndexVars()
 		if err = id.FromId(frand.Bytes(sha256.Size)); chk.E(err) {
 			t.Fatal(err)
 		}
@@ -90,20 +91,23 @@ func TestFullIndex(t *testing.T) {
 		}
 		ki.Set(frand.Intn(math.MaxUint16))
 		ca.FromInt64(time.Now().Unix())
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
-		fi := FullIndexEnc(id, p, ki, ca, ser)
-		fi.MarshalWrite(buf)
+		fi := FullIndexEnc(ser, id, p, ki, ca)
+		if err = fi.MarshalWrite(buf); chk.E(err) {
+			t.Fatal(err)
+		}
 		// log.I.S(fi)
 		bin := buf.Bytes()
 		// log.I.S(bin)
 		buf2 := bytes.NewBuffer(bin)
-		id2, p2, ki2, ca2, ser2 := FullIndexVars()
-		fi2 := FullIndexDec(id2, p2, ki2, ca2, ser2)
+		ser2, id2, p2, ki2, ca2 := FullIndexVars()
+		fi2 := FullIndexDec(ser2, id2, p2, ki2, ca2)
 		if err = fi2.UnmarshalRead(buf2); chk.E(err) {
 			t.Fatal(err)
 		}
 		if !bytes.Equal(id.Bytes(), id2.Bytes()) {
+			log.I.S(id, id2)
 			t.Fatal("failed to recover same value as input")
 		}
 		if !bytes.Equal(p.Bytes(), p2.Bytes()) {
@@ -125,7 +129,7 @@ func TestPubkey(t *testing.T) {
 		if err = p.FromPubkey(frand.Bytes(schnorr.PubKeyBytesLen)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := PubkeyEnc(p, ser)
 		fi.MarshalWrite(buf)
@@ -139,7 +143,7 @@ func TestPubkey(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -153,7 +157,7 @@ func TestPubkeyCreatedAt(t *testing.T) {
 			t.Fatal(err)
 		}
 		ca.FromInt64(time.Now().Unix())
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := PubkeyCreatedAtEnc(p, ca, ser)
 		fi.MarshalWrite(buf)
@@ -167,7 +171,7 @@ func TestPubkeyCreatedAt(t *testing.T) {
 		if ca.ToTimestamp() != ca2.ToTimestamp() {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -178,7 +182,7 @@ func TestCreatedAt(t *testing.T) {
 	for range 100 {
 		ca, ser := CreatedAtVars()
 		ca.FromInt64(time.Now().Unix())
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := CreatedAtEnc(ca, ser)
 		fi.MarshalWrite(buf)
@@ -192,7 +196,7 @@ func TestCreatedAt(t *testing.T) {
 		if ca.ToTimestamp() != ca2.ToTimestamp() {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -203,7 +207,7 @@ func TestFirstSeen(t *testing.T) {
 	for range 100 {
 		ser, ts := FirstSeenVars()
 		ts.FromInt64(time.Now().Unix())
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fs := FirstSeenEnc(ser, ts)
 		fs.MarshalWrite(buf)
@@ -214,7 +218,7 @@ func TestFirstSeen(t *testing.T) {
 		if err = fs2.UnmarshalRead(buf2); chk.E(err) {
 			t.Fatal(err)
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 		if ts.ToTimestamp() != ca2.ToTimestamp() {
@@ -228,7 +232,7 @@ func TestKind(t *testing.T) {
 	for range 100 {
 		ki, ser := KindVars()
 		ki.Set(frand.Intn(math.MaxUint16))
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		kIdx := KindEnc(ki, ser)
 		kIdx.MarshalWrite(buf)
@@ -242,7 +246,7 @@ func TestKind(t *testing.T) {
 		if ki.ToKind() != ki2.ToKind() {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -259,7 +263,7 @@ func TestTagA(t *testing.T) {
 			t.Fatal(err)
 		}
 		ki.Set(frand.Intn(math.MaxUint16))
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagAEnc(ki, p, id, ser)
 		fi.MarshalWrite(buf)
@@ -279,7 +283,7 @@ func TestTagA(t *testing.T) {
 		if ki.ToKind() != ki2.ToKind() {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -292,7 +296,7 @@ func TestTagEvent(t *testing.T) {
 		if err = id.FromId(frand.Bytes(sha256.Size)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		evIdx := TagEventEnc(id, ser)
 		evIdx.MarshalWrite(buf)
@@ -306,7 +310,7 @@ func TestTagEvent(t *testing.T) {
 		if !bytes.Equal(id.Bytes(), id2.Bytes()) {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -319,7 +323,7 @@ func TestTagPubkey(t *testing.T) {
 		if err = p.FromPubkey(frand.Bytes(schnorr.PubKeyBytesLen)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagPubkeyEnc(p, ser)
 		fi.MarshalWrite(buf)
@@ -332,7 +336,7 @@ func TestTagPubkey(t *testing.T) {
 		if err = fi2.UnmarshalRead(buf2); chk.E(err) {
 			t.Fatal(err)
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -345,7 +349,7 @@ func TestTagHashtag(t *testing.T) {
 		if err = id.FromIdent(frand.Bytes(frand.Intn(16) + 8)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagHashtagEnc(id, ser)
 		fi.MarshalWrite(buf)
@@ -359,7 +363,7 @@ func TestTagHashtag(t *testing.T) {
 		if !bytes.Equal(id.Bytes(), id2.Bytes()) {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -372,7 +376,7 @@ func TestTagIdentifier(t *testing.T) {
 		if err = id.FromIdent(frand.Bytes(frand.Intn(16) + 8)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagIdentifierEnc(id, ser)
 		fi.MarshalWrite(buf)
@@ -386,7 +390,7 @@ func TestTagIdentifier(t *testing.T) {
 		if !bytes.Equal(id.Bytes(), id2.Bytes()) {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -401,7 +405,7 @@ func TestTagLetter(t *testing.T) {
 		}
 		lb := frand.Bytes(1)
 		l.Set(lb[0])
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagLetterEnc(l, id, ser)
 		fi.MarshalWrite(buf)
@@ -418,7 +422,7 @@ func TestTagLetter(t *testing.T) {
 		if !bytes.Equal(id.Bytes(), id2.Bytes()) {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -431,7 +435,7 @@ func TestTagProtected(t *testing.T) {
 		if err = p.FromPubkey(frand.Bytes(schnorr.PubKeyBytesLen)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagProtectedEnc(p, ser)
 		fi.MarshalWrite(buf)
@@ -445,7 +449,7 @@ func TestTagProtected(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -461,7 +465,7 @@ func TestTagNonstandard(t *testing.T) {
 		if err = v.FromIdent(frand.Bytes(frand.Intn(16) + 8)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagNonstandardEnc(k, v, ser)
 		fi.MarshalWrite(buf)
@@ -478,7 +482,7 @@ func TestTagNonstandard(t *testing.T) {
 		if !bytes.Equal(v.Bytes(), v2.Bytes()) {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -489,11 +493,13 @@ func TestFulltextWord(t *testing.T) {
 	for range 100 {
 		fw, pos, ser := FullTextWordVars()
 		fw.FromWord(frand.Bytes(frand.Intn(10) + 5))
-		pos.FromUint32(uint32(frand.Intn(math.MaxUint32)))
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		pos.FromInteger(uint64(frand.Intn(math.MaxUint32)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := FullTextWordEnc(fw, pos, ser)
-		fi.MarshalWrite(buf)
+		if err = fi.MarshalWrite(buf); chk.E(err) {
+			t.Fatal(err)
+		}
 		bin := buf.Bytes()
 		buf2 := bytes.NewBuffer(bin)
 		fw2, pos2, ser2 := FullTextWordVars()
@@ -507,7 +513,7 @@ func TestFulltextWord(t *testing.T) {
 		if pos.ToUint32() != pos2.ToUint32() {
 			t.Fatal("failed to recover same value as input")
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -517,7 +523,7 @@ func TestLastAccessed(t *testing.T) {
 	var err error
 	for range 100 {
 		ser := LastAccessedVars()
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := LastAccessedEnc(ser)
 		fi.MarshalWrite(buf)
@@ -528,7 +534,7 @@ func TestLastAccessed(t *testing.T) {
 		if err = fi2.UnmarshalRead(buf2); chk.E(err) {
 			t.Fatal(err)
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}
@@ -538,7 +544,7 @@ func TestAccessCounter(t *testing.T) {
 	var err error
 	for range 100 {
 		ser := AccessCounterVars()
-		ser.FromSerial(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := AccessCounterEnc(ser)
 		fi.MarshalWrite(buf)
@@ -549,7 +555,7 @@ func TestAccessCounter(t *testing.T) {
 		if err = fi2.UnmarshalRead(buf2); chk.E(err) {
 			t.Fatal(err)
 		}
-		if ser.ToSerial() != ser2.ToSerial() {
+		if ser.ToUint64() != ser2.ToUint64() {
 			t.Fatal("failed to recover same value as input")
 		}
 	}

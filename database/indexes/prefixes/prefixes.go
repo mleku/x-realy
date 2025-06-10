@@ -58,6 +58,16 @@ const (
 	// [ prefix ][ 2 bytes kind number ][ 8 serial ]
 	Kind
 
+	// KindCreatedAt is an index of kind and created_at timestamp.
+	//
+	// [ prefix ][ 2 bytes kind number ][ created_at 8 bytes timestamp ][ 8 bytes serial ]
+	KindCreatedAt
+
+	// KindPubkeyCreatedAt is an index of kind and created_at timestamp.
+	//
+	// [ prefix ][ 2 bytes kind number ][ 8 bytes hash of pubkey ][ created_at 8 bytes timestamp ][ 8 bytes serial ]
+	KindPubkeyCreatedAt
+
 	// TagA is an index of `a` tags, which contain kind, pubkey and hash of an arbitrary
 	// text, used to create an abstract reference for a multiplicity of replaceable event with a
 	// kind number. These labels also appear as `d` tags in inbound references, see
@@ -132,43 +142,6 @@ const (
 
 func (i I) Write(w io.Writer) (n int, err error) { return w.Write([]byte(i)) }
 
-// func Identify(r io.Reader) (i int, err error) {
-// 	var prefixes = map[I]int{
-// 		"ev": Event,
-// 		"cf": Config,
-// 		"id": Id,
-// 		"fi": FullIndex,
-// 		"pk": Pubkey,
-// 		"pc": PubkeyCreatedAt,
-// 		"ca": CreatedAt,
-// 		"fs": FirstSeen,
-// 		"ki": Kind,
-// 		"ta": TagA,
-// 		"te": TagEvent,
-// 		"tp": TagPubkey,
-// 		"tt": TagHashtag,
-// 		"td": TagIdentifier,
-// 		"t*": TagLetter,
-// 		"t-": TagProtected,
-// 		"t?": TagNonstandard,
-// 		"fw": FulltextWord,
-// 		"la": LastAccessed,
-// 		"ac": AccessCounter,
-// 	}
-// 	b := make([]byte, Len)
-// 	if _, err = r.Read(b); chk.E(err) {
-// 		return
-// 	}
-// 	s := string(b)
-// 	for ii, v := range prefixes {
-// 		if ii == I(s) {
-// 			return v, nil
-// 		}
-// 	}
-// 	err = errorf.E("no match to known prefix '%s'", s)
-// 	return
-// }
-
 func Prefix(prf int) (i I) {
 	switch prf {
 	case Event:
@@ -189,6 +162,10 @@ func Prefix(prf int) (i I) {
 		return "fs"
 	case Kind:
 		return "ki"
+	case KindCreatedAt:
+		return "kc"
+	case KindPubkeyCreatedAt:
+		return "kp"
 	case TagA:
 		return "ta"
 	case TagEvent:

@@ -14,9 +14,8 @@ import (
 	"x.realy.lol/database/indexes/types/letter"
 	"x.realy.lol/database/indexes/types/prefix"
 	"x.realy.lol/database/indexes/types/pubhash"
-	"x.realy.lol/database/indexes/types/serial"
-	"x.realy.lol/database/indexes/types/size"
 	"x.realy.lol/database/indexes/types/timestamp"
+	"x.realy.lol/database/indexes/types/varint"
 )
 
 type Encs []codec.I
@@ -49,249 +48,274 @@ func (t *T) UnmarshalRead(r io.Reader) (err error) {
 	return
 }
 
-func EventVars() (ser *serial.S) {
-	ser = serial.New()
+func EventVars() (ser *varint.V) {
+	ser = varint.New()
 	return
 }
-func EventEnc(ser *serial.S) (enc *T) {
+func EventEnc(ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.Event), ser)
 }
-func EventDec(ser *serial.S) (enc *T) {
+func EventDec(ser *varint.V) (enc *T) {
 	return New(prefix.New(), ser)
 }
 
-func IdVars() (id *idhash.T, ser *serial.S) {
+func IdVars() (id *idhash.T, ser *varint.V) {
 	id = idhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func IdEnc(id *idhash.T, ser *serial.S) (enc *T) {
+func IdEnc(id *idhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.Id), id, ser)
 }
 func IdSearch(id *idhash.T) (enc *T) {
 	return New(prefix.New(prefixes.Id), id)
 }
-func IdDec(id *idhash.T, ser *serial.S) (enc *T) {
+func IdDec(id *idhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), id, ser)
 }
 
-func FullIndexVars() (t *fullid.T, p *pubhash.T, ki *kindidx.T,
-	ca *timestamp.T, ser *serial.S) {
+func FullIndexVars() (ser *varint.V, t *fullid.T, p *pubhash.T, ki *kindidx.T,
+	ca *timestamp.T) {
+	ser = varint.New()
 	t = fullid.New()
 	p = pubhash.New()
 	ki = kindidx.FromKind(0)
 	ca = &timestamp.T{}
-	ser = serial.New()
 	return
 }
-func FullIndexEnc(t *fullid.T, p *pubhash.T, ki *kindidx.T,
-	ca *timestamp.T, ser *serial.S) (enc *T) {
-	return New(prefix.New(prefixes.FullIndex), t, p, ki, ca, ser)
+func FullIndexEnc(ser *varint.V, t *fullid.T, p *pubhash.T, ki *kindidx.T,
+	ca *timestamp.T) (enc *T) {
+	return New(prefix.New(prefixes.FullIndex), ser, t, p, ki, ca)
 }
-func FullIndexDec(t *fullid.T, p *pubhash.T, ki *kindidx.T,
-	ca *timestamp.T, ser *serial.S) (enc *T) {
-	return New(prefix.New(), t, p, ki, ca, ser)
+func FullIndexDec(ser *varint.V, t *fullid.T, p *pubhash.T, ki *kindidx.T,
+	ca *timestamp.T) (enc *T) {
+	return New(prefix.New(), ser, t, p, ki, ca)
 }
 
-func PubkeyVars() (p *pubhash.T, ser *serial.S) {
+func PubkeyVars() (p *pubhash.T, ser *varint.V) {
 	p = pubhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func PubkeyEnc(p *pubhash.T, ser *serial.S) (enc *T) {
+func PubkeyEnc(p *pubhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.Pubkey), p, ser)
 }
-func PubkeyDec(p *pubhash.T, ser *serial.S) (enc *T) {
+func PubkeyDec(p *pubhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), p, ser)
 }
 
-func PubkeyCreatedAtVars() (p *pubhash.T, ca *timestamp.T, ser *serial.S) {
+func PubkeyCreatedAtVars() (p *pubhash.T, ca *timestamp.T, ser *varint.V) {
 	p = pubhash.New()
 	ca = &timestamp.T{}
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func PubkeyCreatedAtEnc(p *pubhash.T, ca *timestamp.T, ser *serial.S) (enc *T) {
+func PubkeyCreatedAtEnc(p *pubhash.T, ca *timestamp.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.PubkeyCreatedAt), p, ca, ser)
 }
-func PubkeyCreatedAtDec(p *pubhash.T, ca *timestamp.T, ser *serial.S) (enc *T) {
+func PubkeyCreatedAtDec(p *pubhash.T, ca *timestamp.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), p, ca, ser)
 }
 
-func CreatedAtVars() (ca *timestamp.T, ser *serial.S) {
+func CreatedAtVars() (ca *timestamp.T, ser *varint.V) {
 	ca = &timestamp.T{}
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func CreatedAtEnc(ca *timestamp.T, ser *serial.S) (enc *T) {
+func CreatedAtEnc(ca *timestamp.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.CreatedAt), ca, ser)
 }
-func CreatedAtDec(ca *timestamp.T, ser *serial.S) (enc *T) {
+func CreatedAtDec(ca *timestamp.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), ca, ser)
 }
 
-func FirstSeenVars() (ser *serial.S, ts *timestamp.T) {
+func FirstSeenVars() (ser *varint.V, ts *timestamp.T) {
 	ts = &timestamp.T{}
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func FirstSeenEnc(ser *serial.S, ts *timestamp.T) (enc *T) {
+func FirstSeenEnc(ser *varint.V, ts *timestamp.T) (enc *T) {
 	return New(prefix.New(prefixes.FirstSeen), ser, ts)
 }
-func FirstSeenDec(ser *serial.S, ts *timestamp.T) (enc *T) {
+func FirstSeenDec(ser *varint.V, ts *timestamp.T) (enc *T) {
 	return New(prefix.New(), ser, ts)
 }
 
-func KindVars() (ki *kindidx.T, ser *serial.S) {
+func KindVars() (ki *kindidx.T, ser *varint.V) {
 	ki = kindidx.FromKind(0)
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func KindEnc(ki *kindidx.T, ser *serial.S) (enc *T) {
+func KindEnc(ki *kindidx.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.Kind), ki, ser)
 }
-func KindDec(ki *kindidx.T, ser *serial.S) (enc *T) {
+func KindDec(ki *kindidx.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), ki, ser)
+}
+
+func KindCreatedAtVars() (ki *kindidx.T, ca *timestamp.T, ser *varint.V) {
+	ki = kindidx.FromKind(0)
+	ca = &timestamp.T{}
+	ser = varint.New()
+	return
+}
+func KindCreatedAtEnc(ki *kindidx.T, ca *timestamp.T, ser *varint.V) (enc *T) {
+	return New(prefix.New(prefixes.Kind), ki, ca, ser)
+}
+func KindCreatedAtDec(ki *kindidx.T, ca *timestamp.T, ser *varint.V) (enc *T) {
+	return New(prefix.New(), ki, ca, ser)
+}
+
+func KindPubkeyCreatedAtVars() (ki *kindidx.T, p *pubhash.T, ca *timestamp.T, ser *varint.V) {
+	ki = kindidx.FromKind(0)
+	ser = varint.New()
+	return
+}
+func KindPubkeyCreatedAtEnc(ki *kindidx.T, p *pubhash.T, ca *timestamp.T, ser *varint.V) (enc *T) {
+	return New(prefix.New(prefixes.Kind), ki, p, ca, ser)
+}
+func KindPubkeyCreatedAtDec(ki *kindidx.T, p *pubhash.T, ca *timestamp.T, ser *varint.V) (enc *T) {
+	return New(prefix.New(), ki, p, ca, ser)
 }
 
 type TagA struct {
 	Ki  *kindidx.T
 	P   *pubhash.T
 	Id  *identhash.T
-	Ser *serial.S
+	Ser *varint.V
 }
 
-func TagAVars() (ki *kindidx.T, p *pubhash.T, id *identhash.T, ser *serial.S) {
+func TagAVars() (ki *kindidx.T, p *pubhash.T, id *identhash.T, ser *varint.V) {
 	ki = kindidx.FromKind(0)
 	p = pubhash.New()
 	id = identhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func TagAEnc(ki *kindidx.T, p *pubhash.T, id *identhash.T, ser *serial.S) (enc *T) {
+func TagAEnc(ki *kindidx.T, p *pubhash.T, id *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.TagA), ki, p, id, ser)
 }
-func TagADec(ki *kindidx.T, p *pubhash.T, id *identhash.T, ser *serial.S) (enc *T) {
+func TagADec(ki *kindidx.T, p *pubhash.T, id *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), ki, p, id, ser)
 }
 
-func TagEventVars() (id *idhash.T, ser *serial.S) {
+func TagEventVars() (id *idhash.T, ser *varint.V) {
 	id = idhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func TagEventEnc(id *idhash.T, ser *serial.S) (enc *T) {
+func TagEventEnc(id *idhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.TagEvent), id, ser)
 }
-func TagEventDec(id *idhash.T, ser *serial.S) (enc *T) {
+func TagEventDec(id *idhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), id, ser)
 }
 
-func TagPubkeyVars() (p *pubhash.T, ser *serial.S) {
+func TagPubkeyVars() (p *pubhash.T, ser *varint.V) {
 	p = pubhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func TagPubkeyEnc(p *pubhash.T, ser *serial.S) (enc *T) {
+func TagPubkeyEnc(p *pubhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.TagPubkey), p, ser)
 }
-func TagPubkeyDec(p *pubhash.T, ser *serial.S) (enc *T) {
+func TagPubkeyDec(p *pubhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), p, ser)
 }
 
-func TagHashtagVars() (hashtag *identhash.T, ser *serial.S) {
+func TagHashtagVars() (hashtag *identhash.T, ser *varint.V) {
 	hashtag = identhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func TagHashtagEnc(hashtag *identhash.T, ser *serial.S) (enc *T) {
+func TagHashtagEnc(hashtag *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.TagHashtag), hashtag, ser)
 }
-func TagHashtagDec(hashtag *identhash.T, ser *serial.S) (enc *T) {
+func TagHashtagDec(hashtag *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), hashtag, ser)
 }
 
-func TagIdentifierVars() (ident *identhash.T, ser *serial.S) {
+func TagIdentifierVars() (ident *identhash.T, ser *varint.V) {
 	ident = identhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func TagIdentifierEnc(ident *identhash.T, ser *serial.S) (enc *T) {
+func TagIdentifierEnc(ident *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.TagIdentifier), ident, ser)
 }
-func TagIdentifierDec(ident *identhash.T, ser *serial.S) (enc *T) {
+func TagIdentifierDec(ident *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), ident, ser)
 }
 
-func TagLetterVars() (l *letter.T, val *identhash.T, ser *serial.S) {
+func TagLetterVars() (l *letter.T, val *identhash.T, ser *varint.V) {
 	l = letter.New(0)
 	val = identhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func TagLetterEnc(l *letter.T, val *identhash.T, ser *serial.S) (enc *T) {
+func TagLetterEnc(l *letter.T, val *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.TagLetter), l, val, ser)
 }
-func TagLetterDec(l *letter.T, val *identhash.T, ser *serial.S) (enc *T) {
+func TagLetterDec(l *letter.T, val *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), l, val, ser)
 }
 
-func TagProtectedVars() (p *pubhash.T, ser *serial.S) {
+func TagProtectedVars() (p *pubhash.T, ser *varint.V) {
 	p = pubhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func TagProtectedEnc(p *pubhash.T, ser *serial.S) (enc *T) {
+func TagProtectedEnc(p *pubhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.TagProtected), p, ser)
 }
-func TagProtectedDec(p *pubhash.T, ser *serial.S) (enc *T) {
+func TagProtectedDec(p *pubhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), p, ser)
 }
 
-func TagNonstandardVars() (key, value *identhash.T, ser *serial.S) {
+func TagNonstandardVars() (key, value *identhash.T, ser *varint.V) {
 	key = identhash.New()
 	value = identhash.New()
-	ser = serial.New()
+	ser = varint.New()
 	return
 }
-func TagNonstandardEnc(key, value *identhash.T, ser *serial.S) (enc *T) {
+func TagNonstandardEnc(key, value *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.TagNonstandard), key, value, ser)
 }
-func TagNonstandardDec(key, value *identhash.T, ser *serial.S) (enc *T) {
+func TagNonstandardDec(key, value *identhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), key, value, ser)
 }
 
-func FullTextWordVars() (fw *fulltext.T, pos *size.T, ser *serial.S) {
+func FullTextWordVars() (fw *fulltext.T, pos *varint.V, ser *varint.V) {
 	fw = fulltext.New()
-	pos = size.New()
-	ser = serial.New()
+	pos = varint.New()
+	ser = varint.New()
 	return
 }
-func FullTextWordEnc(fw *fulltext.T, pos *size.T, ser *serial.S) (enc *T) {
+func FullTextWordEnc(fw *fulltext.T, pos *varint.V, ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.FulltextWord), fw, pos, ser)
 }
-func FullTextWordDec(fw *fulltext.T, pos *size.T, ser *serial.S) (enc *T) {
+func FullTextWordDec(fw *fulltext.T, pos *varint.V, ser *varint.V) (enc *T) {
 	return New(prefix.New(), fw, pos, ser)
 }
 
-func LastAccessedVars() (ser *serial.S) {
-	ser = serial.New()
+func LastAccessedVars() (ser *varint.V) {
+	ser = varint.New()
 	return
 }
-func LastAccessedEnc(ser *serial.S) (enc *T) {
+func LastAccessedEnc(ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.LastAccessed), ser)
 }
-func LastAccessedDec(ser *serial.S) (enc *T) {
+func LastAccessedDec(ser *varint.V) (enc *T) {
 	return New(prefix.New(), ser)
 }
 
-func AccessCounterVars() (ser *serial.S) {
-	ser = serial.New()
+func AccessCounterVars() (ser *varint.V) {
+	ser = varint.New()
 	return
 }
-func AccessCounterEnc(ser *serial.S) (enc *T) {
+func AccessCounterEnc(ser *varint.V) (enc *T) {
 	return New(prefix.New(prefixes.AccessCounter), ser)
 }
-func AccessCounterDec(ser *serial.S) (enc *T) {
+func AccessCounterDec(ser *varint.V) (enc *T) {
 	return New(prefix.New(), ser)
 }

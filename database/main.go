@@ -35,7 +35,7 @@ func (d *D) Path() string { return d.dataDir }
 // Init sets up the database with the loaded configuration.
 func (d *D) Init(path string) (err error) {
 	d.dataDir = path
-	log.I.Ln("opening realy event store at", d.dataDir)
+	log.I.Ln("opening realy database at", d.dataDir)
 	opts := badger.DefaultOptions(d.dataDir)
 	opts.BlockCacheSize = int64(d.BlockCacheSize)
 	opts.BlockSize = units.Gb
