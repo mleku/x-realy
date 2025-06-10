@@ -146,18 +146,17 @@ func (tags Tags) FilterOut(tagPrefix []string) Tags {
 }
 
 // FilterOutInPlace removes all tags that match the prefix, but potentially reorders the tags in unpredictable ways, see [Tag.StartsWith]
-func (tags Tags) FilterOutInPlace(tagPrefix []string) (t Tags) {
-	for i := 0; i < len(tags); i++ {
-		tag := (tags)[i]
+func (tags *Tags) FilterOutInPlace(tagPrefix []string) {
+	for i := 0; i < len(*tags); i++ {
+		tag := (*tags)[i]
 		if tag.StartsWith(tagPrefix) {
 			// remove this by swapping the last tag into this place
-			last := len(tags) - 1
-			(tags)[i] = (tags)[last]
-			tags = (tags)[0:last]
+			last := len(*tags) - 1
+			(*tags)[i] = (*tags)[last]
+			*tags = (*tags)[0:last]
 			i-- // this is so we can match this just swapped item in the next iteration
 		}
 	}
-	return tags
 }
 
 // AppendUnique appends a tag if it doesn't exist yet, otherwise does nothing.
@@ -174,7 +173,7 @@ func (tags Tags) AppendUnique(tag Tag) Tags {
 	return tags
 }
 
-func (tags Tags) Scan(src any) (t Tags, err error) {
+func (t *Tags) Scan(src any) error {
 	var jtags []byte
 
 	switch v := src.(type) {
@@ -183,11 +182,11 @@ func (tags Tags) Scan(src any) (t Tags, err error) {
 	case string:
 		jtags = []byte(v)
 	default:
-		err = errors.New("couldn't scan tags, it's not a json string")
-		return
+		return errors.New("couldn't scan tags, it's not a json string")
 	}
-	err = json.Unmarshal(jtags, &tags)
-	return
+
+	json.Unmarshal(jtags, &t)
+	return nil
 }
 
 func (tags Tags) ContainsAny(tagName string, values []string) bool {
