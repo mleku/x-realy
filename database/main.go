@@ -1,6 +1,8 @@
 package database
 
 import (
+	"context"
+
 	"github.com/dgraph-io/badger/v4"
 
 	"x.realy.lol/chk"
@@ -9,6 +11,8 @@ import (
 )
 
 type D struct {
+	ctx            context.Context
+	cancel         context.CancelCauseFunc
 	dataDir        string
 	BlockCacheSize int
 	Logger         *logger
@@ -20,7 +24,8 @@ type D struct {
 }
 
 func New() (d *D) {
-	d = &D{BlockCacheSize: units.Gb}
+	ctx, cancel := context.WithCancelCause(context.Background())
+	d = &D{BlockCacheSize: units.Gb, ctx: ctx, cancel: cancel}
 	return
 }
 
@@ -41,7 +46,7 @@ func (d *D) Init(path string) (err error) {
 	if d.DB, err = badger.Open(opts); chk.E(err) {
 		return err
 	}
-	log.T.Ln("getting event store sequence index", d.dataDir)
+	log.I.Ln("getting event store sequence index", d.dataDir)
 	if d.seq, err = d.DB.GetSequence([]byte("events"), 1000); chk.E(err) {
 		return err
 	}
@@ -56,5 +61,30 @@ func (d *D) Serial() (ser uint64, err error) {
 	if ser, err = d.seq.Next(); chk.E(err) {
 	}
 	// log.T.ToSliceOfBytes("serial %x", ser)
+	return
+}
+
+func (d *D) View(fn func(txn *badger.Txn) (err error)) (err error) {
+	if err = d.DB.View(fn); err != nil {
+		return
+	}
+	return
+}
+func (d *D) Update(fn func(txn *badger.Txn) (err error)) (err error) {
+	if err = d.DB.Update(fn); chk.E(err) {
+		return
+	}
+	return
+}
+
+func (d *D) Set(k, v []byte) (err error) {
+	if err = d.Update(func(txn *badger.Txn) (err error) {
+		if err = txn.Set(k, v); chk.E(err) {
+			return
+		}
+		return
+	}); chk.E(err) {
+		return
+	}
 	return
 }

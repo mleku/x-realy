@@ -21,10 +21,10 @@ import (
 
 // GetEventIndexes generates a set of indexes for a new event record. The first record is the
 // key that should have the binary encoded event as its value.
-func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, err error) {
+func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, ser *serial.S, err error) {
 	// log.I.F("getting event indices for\n%s", ev.Serialize())
 	// get a new serial
-	ser := serial.New()
+	ser = serial.New()
 	var s uint64
 	if s, err = d.Serial(); chk.E(err) {
 		return

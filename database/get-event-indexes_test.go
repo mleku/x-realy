@@ -118,7 +118,7 @@ func TestGetEventIndexes(t *testing.T) {
 			t.Fatalf("event failed to verify\n%s", b)
 		}
 		var indices [][]byte
-		if indices, err = d.GetEventIndexes(ev); chk.E(err) {
+		if indices, _, err = d.GetEventIndexes(ev); chk.E(err) {
 			t.Fatal(err)
 		}
 		// log.I.F("%s", b)

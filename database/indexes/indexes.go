@@ -68,6 +68,9 @@ func IdVars() (id *idhash.T, ser *serial.S) {
 func IdEnc(id *idhash.T, ser *serial.S) (enc *T) {
 	return New(prefix.New(prefixes.Id), id, ser)
 }
+func IdSearch(id *idhash.T) (enc *T) {
+	return New(prefix.New(prefixes.Id), id)
+}
 func IdDec(id *idhash.T, ser *serial.S) (enc *T) {
 	return New(prefix.New(), id, ser)
 }
