@@ -10,7 +10,7 @@ import (
 	"x.realy.lol/event"
 )
 
-func (d *D) FindEvent(evId []byte) (ev *event.E, err error) {
+func (d *D) FindEventById(evId []byte) (ev *event.E, err error) {
 	id, ser := indexes.IdVars()
 	if err = id.FromId(evId); chk.E(err) {
 		return

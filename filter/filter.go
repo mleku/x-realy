@@ -10,9 +10,9 @@ import (
 	"x.realy.lol/timestamp"
 )
 
-type Filters []Filter
+type S []F
 
-type Filter struct {
+type F struct {
 	IDs     []string
 	Kinds   []int
 	Authors []string
@@ -28,12 +28,12 @@ type Filter struct {
 
 type TagMap map[string][]string
 
-func (eff Filters) String() string {
+func (eff S) String() string {
 	j, _ := json.Marshal(eff)
 	return string(j)
 }
 
-func (eff Filters) Match(event *event.E) bool {
+func (eff S) Match(event *event.E) bool {
 	for _, filter := range eff {
 		if filter.Matches(event) {
 			return true
@@ -42,7 +42,7 @@ func (eff Filters) Match(event *event.E) bool {
 	return false
 }
 
-func (eff Filters) MatchIgnoringTimestampConstraints(event *event.E) bool {
+func (eff S) MatchIgnoringTimestampConstraints(event *event.E) bool {
 	for _, filter := range eff {
 		if filter.MatchesIgnoringTimestampConstraints(event) {
 			return true
@@ -51,12 +51,12 @@ func (eff Filters) MatchIgnoringTimestampConstraints(event *event.E) bool {
 	return false
 }
 
-func (ef Filter) String() string {
+func (ef F) String() string {
 	j, _ := json.Marshal(ef)
 	return string(j)
 }
 
-func (ef Filter) Matches(event *event.E) bool {
+func (ef F) Matches(event *event.E) bool {
 	if !ef.MatchesIgnoringTimestampConstraints(event) {
 		return false
 	}
@@ -72,7 +72,7 @@ func (ef Filter) Matches(event *event.E) bool {
 	return true
 }
 
-func (ef Filter) MatchesIgnoringTimestampConstraints(event *event.E) bool {
+func (ef F) MatchesIgnoringTimestampConstraints(event *event.E) bool {
 	if event == nil {
 		return false
 	}
@@ -98,7 +98,7 @@ func (ef Filter) MatchesIgnoringTimestampConstraints(event *event.E) bool {
 	return true
 }
 
-func FilterEqual(a Filter, b Filter) bool {
+func FilterEqual(a F, b F) bool {
 	if !helpers.Similar(a.Kinds, b.Kinds) {
 		return false
 	}
@@ -144,8 +144,8 @@ func FilterEqual(a Filter, b Filter) bool {
 	return true
 }
 
-func (ef Filter) Clone() Filter {
-	clone := Filter{
+func (ef F) Clone() F {
+	clone := F{
 		IDs:       slices.Clone(ef.IDs),
 		Authors:   slices.Clone(ef.Authors),
 		Kinds:     slices.Clone(ef.Kinds),
@@ -180,7 +180,7 @@ func (ef Filter) Clone() Filter {
 // It returns -1 if there are no theoretical limits.
 //
 // The given .Limit present in the filter is ignored.
-func GetTheoreticalLimit(filter Filter) int {
+func GetTheoreticalLimit(filter F) int {
 	if len(filter.IDs) > 0 {
 		return len(filter.IDs)
 	}

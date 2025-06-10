@@ -90,7 +90,6 @@ func TestGetEventIndexes(t *testing.T) {
 		if err = ev.MarshalWrite(binE); chk.E(err) {
 			log.I.F("bogus tags probably: %s", b)
 			encErrs++
-			// events that marshal with errors have e and p tag values that aren't hex and should not be accepted
 			continue
 		}
 		ev2 := event.New()
@@ -121,17 +120,12 @@ func TestGetEventIndexes(t *testing.T) {
 		if indices, _, err = d.GetEventIndexes(ev); chk.E(err) {
 			t.Fatal(err)
 		}
-		// log.I.F("%s", b)
-		// log.I.S(indices)
 		datasize += len(b)
 		for _, v := range indices {
 			size += len(v)
 		}
 		_ = indices
 		count++
-		// if count == 10000 {
-		// 	break
-		// }
 	}
 	log.I.F("unmarshaled, verified and indexed %d events in %s, %d Mb of indexes from %d Mb of events, %d Mb as binary, failed verify %d, failed encode %d", count, time.Now().Sub(start), size/units.Mb, datasize/units.Mb, binsize/units.Mb, errs, encErrs)
 	d.Close()

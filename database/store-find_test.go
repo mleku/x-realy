@@ -50,7 +50,7 @@ func TestD_StoreEvent(t *testing.T) {
 		count++
 		if count%1000 == 0 {
 			log.I.F("unmarshaled %d events", count)
-			// break
+			break
 		}
 		if err = d.StoreEvent(ev); chk.E(err) {
 			continue
@@ -60,11 +60,10 @@ func TestD_StoreEvent(t *testing.T) {
 	log.I.F("completed unmarshalling %d events", count)
 	for _, v := range evIds {
 		var ev *event.E
-		if ev, err = d.FindEvent(v); chk.E(err) {
+		if ev, err = d.FindEventById(v); chk.E(err) {
 			t.Fatal(err)
 		}
 		_ = ev
-		// log.I.S(ev)
 	}
 	log.I.F("stored and retrieved %d events", len(evIds))
 	return
