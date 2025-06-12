@@ -28,7 +28,7 @@ func (d *D) GetFulltextKeys(ev *event.E, ser *varint.V) (keys [][]byte, err erro
 		ft := fulltext.New()
 		ft.FromWord([]byte(i))
 		pos := varint.New()
-		pos.FromInteger(uint64(w[i]))
+		pos.FromUint64(uint64(w[i]))
 		buf := new(bytes.Buffer)
 		if err = indexes.FullTextWordEnc(ft, pos, ser).MarshalWrite(buf); chk.E(err) {
 			return

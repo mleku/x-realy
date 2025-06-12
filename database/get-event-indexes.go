@@ -29,7 +29,7 @@ func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, ser *varint.V, err e
 	if s, err = d.Serial(); chk.E(err) {
 		return
 	}
-	ser.FromInteger(s)
+	ser.FromUint64(s)
 	// create the event id key
 	id := idhash.New()
 	var idb []byte

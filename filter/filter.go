@@ -13,17 +13,14 @@ import (
 type S []F
 
 type F struct {
-	IDs     []string
+	Ids     []string
 	Kinds   []int
 	Authors []string
 	Tags    TagMap
 	Since   *timestamp.Timestamp
 	Until   *timestamp.Timestamp
-	Limit   int
+	Limit   *int
 	Search  string
-
-	// LimitZero is or must be set when there is a "limit":0 in the filter, and not when "limit" is just omitted
-	LimitZero bool `json:"-"`
 }
 
 type TagMap map[string][]string
@@ -77,7 +74,7 @@ func (ef F) MatchesIgnoringTimestampConstraints(event *event.E) bool {
 		return false
 	}
 
-	if ef.IDs != nil && !slices.Contains(ef.IDs, event.Id) {
+	if ef.Ids != nil && !slices.Contains(ef.Ids, event.Id) {
 		return false
 	}
 
@@ -103,7 +100,7 @@ func FilterEqual(a F, b F) bool {
 		return false
 	}
 
-	if !helpers.Similar(a.IDs, b.IDs) {
+	if !helpers.Similar(a.Ids, b.Ids) {
 		return false
 	}
 
@@ -137,21 +134,16 @@ func FilterEqual(a F, b F) bool {
 		return false
 	}
 
-	if a.LimitZero != b.LimitZero {
-		return false
-	}
-
 	return true
 }
 
 func (ef F) Clone() F {
 	clone := F{
-		IDs:       slices.Clone(ef.IDs),
-		Authors:   slices.Clone(ef.Authors),
-		Kinds:     slices.Clone(ef.Kinds),
-		Limit:     ef.Limit,
-		Search:    ef.Search,
-		LimitZero: ef.LimitZero,
+		Ids:     slices.Clone(ef.Ids),
+		Authors: slices.Clone(ef.Authors),
+		Kinds:   slices.Clone(ef.Kinds),
+		Limit:   ef.Limit,
+		Search:  ef.Search,
 	}
 
 	if ef.Tags != nil {
@@ -181,8 +173,8 @@ func (ef F) Clone() F {
 //
 // The given .Limit present in the filter is ignored.
 func GetTheoreticalLimit(filter F) int {
-	if len(filter.IDs) > 0 {
-		return len(filter.IDs)
+	if len(filter.Ids) > 0 {
+		return len(filter.Ids)
 	}
 
 	if len(filter.Kinds) == 0 {
@@ -217,3 +209,5 @@ func GetTheoreticalLimit(filter F) int {
 
 	return -1
 }
+
+func IntToPointer(i int) (ptr *int) { return &i }

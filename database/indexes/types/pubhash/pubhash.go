@@ -3,9 +3,11 @@ package pubhash
 import (
 	"io"
 
+	"x.realy.lol/chk"
 	"x.realy.lol/ec/schnorr"
 	"x.realy.lol/errorf"
 	"x.realy.lol/helpers"
+	"x.realy.lol/hex"
 )
 
 const Len = 8
@@ -20,6 +22,19 @@ func (ph *T) FromPubkey(pk []byte) (err error) {
 		return
 	}
 	ph.val = helpers.Hash(pk)[:Len]
+	return
+}
+
+func (ph *T) FromPubkeyHex(pk string) (err error) {
+	if len(pk) != schnorr.PubKeyBytesLen*2 {
+		err = errorf.E("invalid Pubkey length, got %d require %d", len(pk), schnorr.PubKeyBytesLen*2)
+		return
+	}
+	var pkb []byte
+	if pkb, err = hex.Dec(pk); chk.E(err) {
+		return
+	}
+	ph.val = helpers.Hash(pkb)[:Len]
 	return
 }
 

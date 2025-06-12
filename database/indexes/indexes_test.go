@@ -20,7 +20,7 @@ func TestEvent(t *testing.T) {
 	var err error
 	for range 100 {
 		ser := EventVars()
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		evIdx := EventEnc(ser)
 		evIdx.MarshalWrite(buf)
@@ -59,7 +59,7 @@ func TestId(t *testing.T) {
 		if err = id.FromId(frand.Bytes(sha256.Size)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		evIdx := IdEnc(id, ser)
 		evIdx.MarshalWrite(buf)
@@ -91,7 +91,7 @@ func TestFullIndex(t *testing.T) {
 		}
 		ki.Set(frand.Intn(math.MaxUint16))
 		ca.FromInt64(time.Now().Unix())
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := FullIndexEnc(ser, id, p, ki, ca)
 		if err = fi.MarshalWrite(buf); chk.E(err) {
@@ -129,7 +129,7 @@ func TestPubkey(t *testing.T) {
 		if err = p.FromPubkey(frand.Bytes(schnorr.PubKeyBytesLen)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := PubkeyEnc(p, ser)
 		fi.MarshalWrite(buf)
@@ -157,7 +157,7 @@ func TestPubkeyCreatedAt(t *testing.T) {
 			t.Fatal(err)
 		}
 		ca.FromInt64(time.Now().Unix())
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := PubkeyCreatedAtEnc(p, ca, ser)
 		fi.MarshalWrite(buf)
@@ -182,7 +182,7 @@ func TestCreatedAt(t *testing.T) {
 	for range 100 {
 		ca, ser := CreatedAtVars()
 		ca.FromInt64(time.Now().Unix())
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := CreatedAtEnc(ca, ser)
 		fi.MarshalWrite(buf)
@@ -207,7 +207,7 @@ func TestFirstSeen(t *testing.T) {
 	for range 100 {
 		ser, ts := FirstSeenVars()
 		ts.FromInt64(time.Now().Unix())
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fs := FirstSeenEnc(ser, ts)
 		fs.MarshalWrite(buf)
@@ -232,7 +232,7 @@ func TestKind(t *testing.T) {
 	for range 100 {
 		ki, ser := KindVars()
 		ki.Set(frand.Intn(math.MaxUint16))
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		kIdx := KindEnc(ki, ser)
 		kIdx.MarshalWrite(buf)
@@ -263,7 +263,7 @@ func TestTagA(t *testing.T) {
 			t.Fatal(err)
 		}
 		ki.Set(frand.Intn(math.MaxUint16))
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagAEnc(ki, p, id, ser)
 		fi.MarshalWrite(buf)
@@ -296,7 +296,7 @@ func TestTagEvent(t *testing.T) {
 		if err = id.FromId(frand.Bytes(sha256.Size)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		evIdx := TagEventEnc(id, ser)
 		evIdx.MarshalWrite(buf)
@@ -323,7 +323,7 @@ func TestTagPubkey(t *testing.T) {
 		if err = p.FromPubkey(frand.Bytes(schnorr.PubKeyBytesLen)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagPubkeyEnc(p, ser)
 		fi.MarshalWrite(buf)
@@ -349,7 +349,7 @@ func TestTagHashtag(t *testing.T) {
 		if err = id.FromIdent(frand.Bytes(frand.Intn(16) + 8)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagHashtagEnc(id, ser)
 		fi.MarshalWrite(buf)
@@ -376,7 +376,7 @@ func TestTagIdentifier(t *testing.T) {
 		if err = id.FromIdent(frand.Bytes(frand.Intn(16) + 8)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagIdentifierEnc(id, ser)
 		fi.MarshalWrite(buf)
@@ -405,7 +405,7 @@ func TestTagLetter(t *testing.T) {
 		}
 		lb := frand.Bytes(1)
 		l.Set(lb[0])
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagLetterEnc(l, id, ser)
 		fi.MarshalWrite(buf)
@@ -435,7 +435,7 @@ func TestTagProtected(t *testing.T) {
 		if err = p.FromPubkey(frand.Bytes(schnorr.PubKeyBytesLen)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagProtectedEnc(p, ser)
 		fi.MarshalWrite(buf)
@@ -465,7 +465,7 @@ func TestTagNonstandard(t *testing.T) {
 		if err = v.FromIdent(frand.Bytes(frand.Intn(16) + 8)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := TagNonstandardEnc(k, v, ser)
 		fi.MarshalWrite(buf)
@@ -493,8 +493,8 @@ func TestFulltextWord(t *testing.T) {
 	for range 100 {
 		fw, pos, ser := FullTextWordVars()
 		fw.FromWord(frand.Bytes(frand.Intn(10) + 5))
-		pos.FromInteger(uint64(frand.Intn(math.MaxUint32)))
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		pos.FromUint64(uint64(frand.Intn(math.MaxUint32)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := FullTextWordEnc(fw, pos, ser)
 		if err = fi.MarshalWrite(buf); chk.E(err) {
@@ -523,7 +523,7 @@ func TestLastAccessed(t *testing.T) {
 	var err error
 	for range 100 {
 		ser := LastAccessedVars()
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := LastAccessedEnc(ser)
 		fi.MarshalWrite(buf)
@@ -544,7 +544,7 @@ func TestAccessCounter(t *testing.T) {
 	var err error
 	for range 100 {
 		ser := AccessCounterVars()
-		ser.FromInteger(uint64(frand.Intn(math.MaxInt64)))
+		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := AccessCounterEnc(ser)
 		fi.MarshalWrite(buf)

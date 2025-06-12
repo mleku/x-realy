@@ -14,7 +14,7 @@ import (
 
 func (d *D) StoreEvent(ev *event.E) (err error) {
 	var ev2 *event.E
-	if ev2, err = d.FindEventById(ev.GetIdBytes()); err != nil {
+	if ev2, err = d.GetEventById(ev.GetIdBytes()); err != nil {
 		// so we didn't find it?
 	}
 	if ev2 != nil {

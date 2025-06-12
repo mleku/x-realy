@@ -8,8 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"x.realy.lol/chk"
 	"x.realy.lol/event"
 	"x.realy.lol/kind"
+	"x.realy.lol/log"
 	"x.realy.lol/timestamp"
 )
 
@@ -54,8 +56,7 @@ func TestFilterUnmarshalWithLimitZero(t *testing.T) {
 			f.Since.Time().UTC().Format("2006-01-02") != "2022-02-07" ||
 			f.Until != nil ||
 			f.Tags == nil || len(f.Tags) != 2 || !slices.Contains(f.Tags["something"], "bab") ||
-			f.Search != "test" ||
-			f.LimitZero == false {
+			f.Search != "test" {
 			return false
 		}
 		return true
@@ -65,10 +66,9 @@ func TestFilterUnmarshalWithLimitZero(t *testing.T) {
 func TestFilterMarshalWithLimitZero(t *testing.T) {
 	until := timestamp.Timestamp(12345678)
 	filterj, err := json.Marshal(F{
-		Kinds:     []int{kind.TextNote, kind.RecommendServer, kind.EncryptedDirectMessage},
-		Tags:      TagMap{"fruit": {"banana", "mango"}},
-		Until:     &until,
-		LimitZero: true,
+		Kinds: []int{kind.TextNote, kind.RecommendServer, kind.EncryptedDirectMessage},
+		Tags:  TagMap{"fruit": {"banana", "mango"}},
+		Until: &until,
 	})
 	assert.NoError(t, err)
 
@@ -103,13 +103,13 @@ func TestFilterEquality(t *testing.T) {
 			Kinds: []int{kind.EncryptedDirectMessage, kind.Deletion},
 			Tags:  TagMap{"letter": {"a", "b"}, "fruit": {"banana"}},
 			Since: &tm,
-			IDs:   []string{"aaaa", "bbbb"},
+			Ids:   []string{"aaaa", "bbbb"},
 		},
 		F{
 			Kinds: []int{kind.Deletion, kind.EncryptedDirectMessage},
 			Tags:  TagMap{"letter": {"a", "b"}, "fruit": {"banana"}},
 			Since: &tm,
-			IDs:   []string{"aaaa", "bbbb"},
+			Ids:   []string{"aaaa", "bbbb"},
 		},
 	), "kind+2tags+since+ids filters should be equal")
 
@@ -125,13 +125,13 @@ func TestFilterClone(t *testing.T) {
 		Kinds: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
 		Tags:  TagMap{"letter": {"a", "b"}, "fruit": {"banana"}},
 		Since: &ts,
-		IDs:   []string{"9894b4b5cb5166d23ee8899a4151cf0c66aec00bde101982a13b8e8ceb972df9"},
+		Ids:   []string{"9894b4b5cb5166d23ee8899a4151cf0c66aec00bde101982a13b8e8ceb972df9"},
 	}
 	clone := flt.Clone()
 	assert.True(t, FilterEqual(flt, clone), "clone is not equal:\n %v !=\n %v", flt, clone)
 
 	clone1 := flt.Clone()
-	clone1.IDs = append(clone1.IDs, "88f0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d")
+	clone1.Ids = append(clone1.Ids, "88f0c63fcb93463407af97a5e5ee64fa883d107ef9e558472c4eb9aaaefa459d")
 	assert.False(t, FilterEqual(flt, clone1), "modifying the clone ids should cause it to not be equal anymore")
 
 	clone2 := flt.Clone()
@@ -148,11 +148,40 @@ func TestFilterClone(t *testing.T) {
 }
 
 func TestTheoreticalLimit(t *testing.T) {
-	require.Equal(t, 6, GetTheoreticalLimit(F{IDs: []string{"a", "b", "c", "d", "e", "f"}}))
+	require.Equal(t, 6, GetTheoreticalLimit(F{Ids: []string{"a", "b", "c", "d", "e", "f"}}))
 	require.Equal(t, 9, GetTheoreticalLimit(F{Authors: []string{"a", "b", "c"}, Kinds: []int{3, 0, 10002}}))
 	require.Equal(t, 4, GetTheoreticalLimit(F{Authors: []string{"a", "b", "c", "d"}, Kinds: []int{10050}}))
 	require.Equal(t, -1, GetTheoreticalLimit(F{Authors: []string{"a", "b", "c", "d"}}))
 	require.Equal(t, -1, GetTheoreticalLimit(F{Kinds: []int{3, 0, 10002}}))
 	require.Equal(t, 24, GetTheoreticalLimit(F{Authors: []string{"a", "b", "c", "d", "e", "f"}, Kinds: []int{30023, 30024}, Tags: TagMap{"d": []string{"aaa", "bbb"}}}))
 	require.Equal(t, -1, GetTheoreticalLimit(F{Authors: []string{"a", "b", "c", "d", "e", "f"}, Kinds: []int{30023, 30024}}))
+}
+
+func TestFilter(t *testing.T) {
+	ts := timestamp.Now() - 60*60
+	now := timestamp.Now()
+	flt := &F{
+		Authors: []string{"1d80e5588de010d137a67c42b03717595f5f510e73e42cfc48f31bae91844d59"},
+		Kinds:   []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		Tags: TagMap{
+			"#t": {"a", "b"},
+			"#e": {"9894b4b5cb5166d23ee8899a4151cf0c66aec00bde101982a13b8e8ceb972df9"},
+			"#p": {"1d80e5588de010d137a67c42b03717595f5f510e73e42cfc48f31bae91844d59"},
+		},
+		Until: &now,
+		Since: &ts,
+		Ids:   []string{"9894b4b5cb5166d23ee8899a4151cf0c66aec00bde101982a13b8e8ceb972df9"},
+		// Limit: IntToPointer(10),
+	}
+	var err error
+	var b []byte
+	if b, err = json.Marshal(flt); chk.E(err) {
+		t.Fatal(err)
+	}
+	log.I.F("%s", b)
+	var f2 F
+	if err = json.Unmarshal(b, &f2); chk.E(err) {
+		t.Fatal(err)
+	}
+	log.I.S(f2)
 }

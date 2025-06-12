@@ -12,7 +12,7 @@ type V struct{ val uint64 }
 
 func New() (s *V) { return &V{} }
 
-func (vi *V) FromInteger(ser uint64) {
+func (vi *V) FromUint64(ser uint64) {
 	vi.val = ser
 	return
 }

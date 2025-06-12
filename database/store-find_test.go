@@ -60,7 +60,7 @@ func TestD_StoreEvent(t *testing.T) {
 	log.I.F("completed unmarshalling %d events", count)
 	for _, v := range evIds {
 		var ev *event.E
-		if ev, err = d.FindEventById(v); chk.E(err) {
+		if ev, err = d.GetEventById(v); chk.E(err) {
 			t.Fatal(err)
 		}
 		_ = ev
