@@ -70,70 +70,55 @@ func (d *D) Filter(f filter.F) (evSerials []*varint.V, err error) {
 		}
 		return
 	}
+	var since, until timestamp.Timestamp
+	if bf&hasSince != 0 {
+		since = *f.Since
+	}
+	if bf&hasUntil != 0 {
+		until = *f.Until
+	} else {
+		until = math.MaxInt64
+	}
 	// next, check for filters that only have since and/or until
-	if bf&(hasSince+hasUntil) != 0 {
-		var since, until timestamp.Timestamp
-		if bf&hasSince != 0 {
-			since = *f.Since
-		}
-		if bf&hasUntil != 0 {
-			until = *f.Until
-		} else {
-			until = math.MaxInt64
-		}
+	if bf&hasSince != 0 || bf&hasUntil != 0 {
 		if evSerials, err = d.GetEventSerialsByCreatedAtRange(since, until); chk.E(err) {
 			return
 		}
 		return
 	}
-	// next, kinds/since/until
-	if bf&(hasSince+hasUntil+hasKinds) == bf && bf&hasKinds != 0 {
-		var since, until timestamp.Timestamp
-		if bf&hasSince != 0 {
-			since = *f.Since
-		}
-		if bf&hasUntil != 0 {
-			until = *f.Until
-		} else {
-			until = math.MaxInt64
-		}
+	// next, kinds
+	if bf&hasKinds == hasKinds && ^hasKinds&bf == 0 {
 		if evSerials, err = d.GetEventSerialsByKindsCreatedAtRange(f.Kinds, since, until); chk.E(err) {
 			return
 		}
 		return
 	}
-	// next authors/since/until
-	if bf&(hasSince+hasUntil+hasAuthors) == bf && bf&hasAuthors != 0 {
-		var since, until timestamp.Timestamp
-		if bf&hasSince != 0 {
-			since = *f.Since
-		}
-		if bf&hasUntil != 0 {
-			until = *f.Until
-		} else {
-			until = math.MaxInt64
-		}
+	// next authors
+	if bf&hasAuthors == hasAuthors && ^hasAuthors&bf == 0 {
 		if evSerials, err = d.GetEventSerialsByAuthorsCreatedAtRange(f.Authors, since, until); chk.E(err) {
 			return
 		}
 		return
 	}
-	// next authors/kinds/since/until
-	if bf&(hasSince+hasUntil+hasKinds+hasAuthors) == bf && bf&(hasAuthors+hasKinds) != 0 {
-		var since, until timestamp.Timestamp
-		if bf&hasSince != 0 {
-			since = *f.Since
+	// next authors/kinds
+	ak := hasAuthors + hasKinds
+	if bf&(ak) == ak && ^ak&bf == 0 {
+		if evSerials, err = d.GetEventSerialsByKindsAuthorsCreatedAtRange(f.Kinds, f.Authors, since, until); chk.E(err) {
+			return
 		}
-		if bf&hasUntil != 0 {
-			until = *f.Until
-		} else {
-			until = math.MaxInt64
-		}
+		return
+	}
+	// next authors/tags
+	at := hasAuthors + hasTags
+	if bf&(at) == at && ^at&bf == 0 {
 		if evSerials, err = d.GetEventSerialsByKindsAuthorsCreatedAtRange(f.Kinds, f.Authors, since, until); chk.E(err) {
 			return
 		}
 		return
 	}
 
+	// next kinds/tags
+
+	// next
 	return
 }

@@ -15,5 +15,5 @@ func New[T constraints.Integer | constraints.Float](t T) Timestamp {
 }
 
 func (t Timestamp) Time() time.Time { return time.Unix(int64(t), 0) }
-
-func (t Timestamp) ToInt64() int64 { return int64(t) }
+func (t Timestamp) ToInt64() int64  { return int64(t) }
+func (t Timestamp) ToInt() int      { return int(t) }

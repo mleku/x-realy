@@ -59,7 +59,7 @@ func (d *D) GetEventIndexes(ev *event.E) (indices [][]byte, ser *varint.V, err e
 	}
 	ki := kindidx.FromKind(ev.Kind)
 	ca := &timestamp.T{}
-	ca.FromInt64(int64(ev.CreatedAt))
+	ca.FromInt(ev.CreatedAt.ToInt())
 	evIFiB := new(bytes.Buffer)
 	if err = indexes.FullIndexEnc(ser, fid, p, ki, ca).MarshalWrite(evIFiB); chk.E(err) {
 		return

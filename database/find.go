@@ -118,7 +118,7 @@ func (d *D) GetEventById(evId []byte) (ev *event.E, err error) {
 func (d *D) GetEventSerialsByCreatedAtRange(since, until timestamp.Timestamp) (sers []*varint.V, err error) {
 	// get the start (end) max possible index prefix
 	startCreatedAt, startSer := indexes.CreatedAtVars()
-	startCreatedAt.FromInt64(until.ToInt64())
+	startCreatedAt.FromInt(until.ToInt())
 	startSer.FromUint64(math.MaxUint64)
 	prf := new(bytes.Buffer)
 	if err = indexes.CreatedAtEnc(startCreatedAt, startSer).MarshalWrite(prf); chk.E(err) {
@@ -155,7 +155,7 @@ func (d *D) GetEventSerialsByKindsCreatedAtRange(kinds []int, since, until times
 	for _, k := range kinds {
 		kind, startCreatedAt, startSer := indexes.KindCreatedAtVars()
 		kind.Set(k)
-		startCreatedAt.FromInt64(until.ToInt64())
+		startCreatedAt.FromInt(until.ToInt())
 		startSer.FromUint64(math.MaxUint64)
 		prf := new(bytes.Buffer)
 		if err = indexes.KindCreatedAtEnc(kind, startCreatedAt, startSer).MarshalWrite(prf); chk.E(err) {
@@ -205,7 +205,7 @@ func (d *D) GetEventSerialsByAuthorsCreatedAtRange(pubkeys []string, since, unti
 			err = errorf.E("all pubkeys in authors field of filter failed to decode")
 			return
 		}
-		startCreatedAt.FromInt64(until.ToInt64())
+		startCreatedAt.FromInt(until.ToInt())
 		startSer.FromUint64(math.MaxUint64)
 		prf := new(bytes.Buffer)
 		if err = indexes.PubkeyCreatedAtEnc(pubkey, startCreatedAt, startSer).MarshalWrite(prf); chk.E(err) {
@@ -256,7 +256,7 @@ func (d *D) GetEventSerialsByKindsAuthorsCreatedAtRange(kinds []int, pubkeys []s
 				err = errorf.E("all pubkeys in authors field of filter failed to decode")
 				return
 			}
-			startCreatedAt.FromInt64(until.ToInt64())
+			startCreatedAt.FromInt(until.ToInt())
 			startSer.FromUint64(math.MaxUint64)
 			kind.Set(k)
 			prf := new(bytes.Buffer)

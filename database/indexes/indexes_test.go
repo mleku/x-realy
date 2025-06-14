@@ -90,7 +90,7 @@ func TestFullIndex(t *testing.T) {
 			t.Fatal(err)
 		}
 		ki.Set(frand.Intn(math.MaxUint16))
-		ca.FromInt64(time.Now().Unix())
+		ca.FromInt(int(time.Now().Unix()))
 		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := FullIndexEnc(ser, id, p, ki, ca)
@@ -156,7 +156,7 @@ func TestPubkeyCreatedAt(t *testing.T) {
 		if err = p.FromPubkey(frand.Bytes(schnorr.PubKeyBytesLen)); chk.E(err) {
 			t.Fatal(err)
 		}
-		ca.FromInt64(time.Now().Unix())
+		ca.FromInt(int(time.Now().Unix()))
 		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := PubkeyCreatedAtEnc(p, ca, ser)
@@ -181,7 +181,7 @@ func TestCreatedAt(t *testing.T) {
 	var err error
 	for range 100 {
 		ca, ser := CreatedAtVars()
-		ca.FromInt64(time.Now().Unix())
+		ca.FromInt(int(time.Now().Unix()))
 		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fi := CreatedAtEnc(ca, ser)
@@ -206,7 +206,7 @@ func TestFirstSeen(t *testing.T) {
 	var err error
 	for range 100 {
 		ser, ts := FirstSeenVars()
-		ts.FromInt64(time.Now().Unix())
+		ts.FromInt(int(time.Now().Unix()))
 		ser.FromUint64(uint64(frand.Intn(math.MaxInt64)))
 		buf := new(bytes.Buffer)
 		fs := FirstSeenEnc(ser, ts)

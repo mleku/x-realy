@@ -1,48 +1,56 @@
 package timestamp
 
 import (
-	"encoding/binary"
+	"bytes"
 	"io"
 
-	"x.realy.lol/errorf"
+	"x.realy.lol/chk"
+	"x.realy.lol/database/indexes/types/varint"
 	timeStamp "x.realy.lol/timestamp"
 )
 
 const Len = 8
 
-type T struct{ val []byte }
+type T struct{ val int }
 
-func (ts *T) FromInt64(timestamp int64) {
-	ts.val = make([]byte, Len)
-	binary.LittleEndian.PutUint64(ts.val, uint64(timestamp))
-	return
-}
+func (ts *T) FromInt(t int)     { ts.val = t }
+func (ts *T) FromInt64(t int64) { ts.val = int(t) }
 
 func FromBytes(timestampBytes []byte) (ts *T, err error) {
-	if len(timestampBytes) != Len {
-		err = errorf.E("kind must be %d bytes long, got %d", Len, len(timestampBytes))
+	v := varint.New()
+	if err = v.UnmarshalRead(bytes.NewBuffer(timestampBytes)); chk.E(err) {
 		return
 	}
-	ts = &T{val: timestampBytes}
+	ts = &T{val: v.ToInt()}
 	return
 }
 
 func (ts *T) ToTimestamp() (timestamp timeStamp.Timestamp) {
-	return timeStamp.Timestamp(binary.LittleEndian.Uint64(ts.val))
+	return
 }
-func (ts *T) Bytes() (b []byte) { return ts.val }
+func (ts *T) Bytes() (b []byte, err error) {
+	v := varint.New()
+	buf := new(bytes.Buffer)
+	if err = v.MarshalWrite(buf); chk.E(err) {
+		return
+	}
+	b = buf.Bytes()
+	return
+}
 
 func (ts *T) MarshalWrite(w io.Writer) (err error) {
-	_, err = w.Write(ts.val)
+	v := varint.New()
+	if err = v.MarshalWrite(w); chk.E(err) {
+		return
+	}
 	return
 }
 
 func (ts *T) UnmarshalRead(r io.Reader) (err error) {
-	if len(ts.val) < Len {
-		ts.val = make([]byte, Len)
-	} else {
-		ts.val = ts.val[:Len]
+	v := varint.New()
+	if err = v.UnmarshalRead(r); chk.E(err) {
+		return
 	}
-	_, err = r.Read(ts.val)
+	ts.val = v.ToInt()
 	return
 }

@@ -27,6 +27,8 @@ func FromBytes(ser []byte) (s *V, err error) {
 
 func (vi *V) ToUint64() (ser uint64) { return vi.val }
 
+func (vi *V) ToInt() (ser int) { return int(vi.val) }
+
 func (vi *V) ToUint32() (v uint32) { return uint32(vi.val) }
 
 func (vi *V) Bytes() (b []byte) {

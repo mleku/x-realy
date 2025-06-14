@@ -53,7 +53,11 @@ func (d *D) StoreEvent(ev *event.E) (err error) {
 	if err = indexes.LastAccessedEnc(ser).MarshalWrite(laI); chk.E(err) {
 		return
 	}
-	if err = d.Set(laI.Bytes(), ts.Bytes()); chk.E(err) {
+	var tsb []byte
+	if tsb, err = ts.Bytes(); chk.E(err) {
+		return
+	}
+	if err = d.Set(laI.Bytes(), tsb); chk.E(err) {
 		return
 	}
 	// AccessCounter
