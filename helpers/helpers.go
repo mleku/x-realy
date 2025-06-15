@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -122,4 +123,16 @@ func IsLowerHex(thing string) bool {
 func Hash(in []byte) (out []byte) {
 	h := sha256.Sum256(in)
 	return h[:]
+}
+
+// RemoveDuplicates removes repeated items in any slice of comparable items. This would not be
+// appropriate for pointers unless they were assembled from the same source where a pointer is
+// equal to a unique reference to the content.
+func RemoveDuplicates[T comparable](s []T) []T {
+	alreadySeen := make(map[T]struct{}, len(s))
+	return slices.DeleteFunc(s, func(val T) bool {
+		_, duplicate := alreadySeen[val]
+		alreadySeen[val] = struct{}{}
+		return duplicate
+	})
 }

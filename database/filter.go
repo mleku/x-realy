@@ -1,9 +1,13 @@
 package database
 
 import (
+	"bytes"
 	"math"
+	"sort"
 
 	"x.realy.lol/chk"
+	"x.realy.lol/database/indexes"
+	"x.realy.lol/database/indexes/types/pubhash"
 	"x.realy.lol/database/indexes/types/varint"
 	"x.realy.lol/filter"
 	"x.realy.lol/hex"
@@ -51,7 +55,10 @@ func ToBitfield(f *filter.F) (b Bitfield) {
 	return
 }
 
-func (d *D) Filter(f filter.F) (evSerials []*varint.V, err error) {
+// Filter runs a nip-01 type query on a provided filter and returns the database serial keys of
+// the matching events, excluding a list of authors also provided from the result.
+func (d *D) Filter(f filter.F, exclude []*pubhash.T) (evSerials varint.S, err error) {
+	var evs varint.S
 	bf := ToBitfield(&f)
 	// first, if there is Ids these override everything else
 	if bf&hasIds != 0 {
@@ -66,7 +73,7 @@ func (d *D) Filter(f filter.F) (evSerials []*varint.V, err error) {
 				// just going to ignore it i guess
 				continue
 			}
-			evSerials = append(evSerials, ev)
+			evs = append(evs, ev)
 		}
 		return
 	}
@@ -81,44 +88,77 @@ func (d *D) Filter(f filter.F) (evSerials []*varint.V, err error) {
 	}
 	// next, check for filters that only have since and/or until
 	if bf&hasSince != 0 || bf&hasUntil != 0 {
-		if evSerials, err = d.GetEventSerialsByCreatedAtRange(since, until); chk.E(err) {
+		if evs, err = d.GetEventSerialsByCreatedAtRange(since, until); chk.E(err) {
 			return
 		}
-		return
+		goto done
 	}
 	// next, kinds
 	if bf&hasKinds == hasKinds && ^hasKinds&bf == 0 {
-		if evSerials, err = d.GetEventSerialsByKindsCreatedAtRange(f.Kinds, since, until); chk.E(err) {
+		if evs, err = d.GetEventSerialsByKindsCreatedAtRange(f.Kinds, since, until); chk.E(err) {
 			return
 		}
-		return
+		goto done
 	}
 	// next authors
 	if bf&hasAuthors == hasAuthors && ^hasAuthors&bf == 0 {
-		if evSerials, err = d.GetEventSerialsByAuthorsCreatedAtRange(f.Authors, since, until); chk.E(err) {
+		if evs, err = d.GetEventSerialsByAuthorsCreatedAtRange(f.Authors, since, until); chk.E(err) {
 			return
 		}
-		return
+		goto done
 	}
 	// next authors/kinds
-	ak := hasAuthors + hasKinds
-	if bf&(ak) == ak && ^ak&bf == 0 {
-		if evSerials, err = d.GetEventSerialsByKindsAuthorsCreatedAtRange(f.Kinds, f.Authors, since, until); chk.E(err) {
+
+	if ak := hasAuthors + hasKinds; bf&(ak) == ak && ^ak&bf == 0 {
+		if evs, err = d.GetEventSerialsByKindsAuthorsCreatedAtRange(f.Kinds, f.Authors, since, until); chk.E(err) {
 			return
 		}
-		return
+		goto done
+	}
+	// if there is tags, assemble them into an array of tags with the
+	if bf&hasTags != 0 && bf&^hasTags == 0 {
+		if evs, err = d.GetEventSerialsByTagsCreatedAtRange(f.Tags); chk.E(err) {
+
+		}
 	}
 	// next authors/tags
-	at := hasAuthors + hasTags
-	if bf&(at) == at && ^at&bf == 0 {
-		if evSerials, err = d.GetEventSerialsByKindsAuthorsCreatedAtRange(f.Kinds, f.Authors, since, until); chk.E(err) {
+	if at := hasAuthors + hasTags; bf&(at) == at && ^at&bf == 0 {
+		if evs, err = d.GetEventSerialsByAuthorsTagsCreatedAtRange(f.Tags, f.Authors, since, until); chk.E(err) {
 			return
 		}
+		goto done
+	}
+	// next kinds/tags
+	if kt := hasKinds + hasTags; bf&(kt) == kt && ^kt&bf == 0 {
+		if evs, err = d.GetEventSerialsByKindsTagsCreatedAtRange(f.Tags, f.Kinds, since, until); chk.E(err) {
+			return
+		}
+		goto done
+	}
+	// next kinds/authors/tags
+	if kat := hasAuthors + hasTags; bf&(kat) == kat && ^kat&bf == 0 {
+		if evs, err = d.GetEventSerialsByKindsAuthorsTagsCreatedAtRange(f.Tags, f.Kinds, f.Authors, since, until); chk.E(err) {
+			return
+		}
+		goto done
+	}
+done:
+	// scan the FullIndex for these serials, and sort them by descending created_at
+	var index []indexes.FullIndex
+	if index, err = d.GetFullIndexesFromSerials(evs); chk.E(err) {
 		return
 	}
-
-	// next kinds/tags
-
-	// next
+	// sort by reverse chronological order
+	sort.Slice(index, func(i, j int) bool {
+		return index[i].CreatedAt.ToTimestamp() > index[j].CreatedAt.ToTimestamp()
+	})
+	for _, item := range index {
+		for _, x := range exclude {
+			if bytes.Equal(item.Pubkey.Bytes(), x.Bytes()) {
+				continue
+			}
+		}
+		evSerials = append(evSerials, item.Ser)
+	}
 	return
 }

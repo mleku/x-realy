@@ -32,6 +32,11 @@ func New(encoders ...codec.I) (i *T) { return &T{encoders} }
 
 func (t *T) MarshalWrite(w io.Writer) (err error) {
 	for _, e := range t.Encs {
+		if e == nil {
+			// allow a field to be empty, as is needed for search indexes to create search
+			// prefixes.
+			continue
+		}
 		if err = e.MarshalWrite(w); chk.E(err) {
 			return
 		}
@@ -72,6 +77,14 @@ func IdSearch(id *idhash.T) (enc *T) {
 }
 func IdDec(id *idhash.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), id, ser)
+}
+
+type FullIndex struct {
+	Ser       *varint.V
+	Id        *fullid.T
+	Pubkey    *pubhash.T
+	Kind      *kindidx.T
+	CreatedAt *timestamp.T
 }
 
 func FullIndexVars() (ser *varint.V, t *fullid.T, p *pubhash.T, ki *kindidx.T,

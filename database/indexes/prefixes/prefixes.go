@@ -90,6 +90,13 @@ const (
 	// [ prefix ][ 2 bytes kind number ][ 8 bytes hash of pubkey ][ 8 bytes hash of label ][ serial]
 	TagA
 
+	// TagIdentifier is a `d` tag identifier that creates an arbitrary label that can be used
+	// to refer to an event. This is used for parameterized replaceable events to identify them
+	// with `a` tags for reference.
+	//
+	// [ prefix ][ 8 byte hash of identifier ][ 8 serial ]
+	TagIdentifier
+
 	// TagEvent is a reference to an event.
 	//
 	// [ prefix ][ 8 bytes truncated hash of event Id ][ 8 serial ]
@@ -105,13 +112,6 @@ const (
 	//
 	// [ prefix ][ 8 bytes hash of hashtag ][ 8 serial ]
 	TagHashtag
-
-	// TagIdentifier is a `d` tag identifier that creates an arbitrary label that can be used
-	// to refer to an event. This is used for parameterized replaceable events to identify them
-	// with `a` tags for reference.
-	//
-	// [ prefix ][ 8 byte hash of identifier ][ 8 serial ]
-	TagIdentifier
 
 	// TagLetter covers all other types of single letter mandatory indexed tags, including
 	// such as `d` for identifiers and things like `m` for mimetype and other kinds of

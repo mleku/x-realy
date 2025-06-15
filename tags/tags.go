@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"x.realy.lol/chk"
+	"x.realy.lol/ec/schnorr"
 	"x.realy.lol/helpers"
 	"x.realy.lol/hex"
 	"x.realy.lol/ints"
@@ -246,33 +247,44 @@ func (tags Tags) Get_a_Tags() (atags []Tag_a) {
 	if len(a) > 0 {
 		for _, v := range a {
 			if v[0] == "a" && len(v) > 1 {
-				// try to split it
-				parts := strings.Split(v[1], ":")
-				// there must be a kind first
-				ki := ints.New(0)
-				if _, err = ki.Unmarshal([]byte(parts[0])); chk.E(err) {
+				var atag Tag_a
+				if atag, err = Decode_a_Tag(v[1]); chk.E(err) {
 					continue
-				}
-				atag := Tag_a{
-					Kind: int(ki.Uint16()),
-				}
-				if len(parts) < 2 {
-					continue
-				}
-				// next must be a pubkey
-				var pk []byte
-				if pk, err = hex.Dec(parts[1]); err != nil {
-					continue
-				}
-				atag.Pubkey = pk
-				// there possibly can be nothing after this
-				if len(parts) >= 3 {
-					// third part is the identifier (d tag)
-					atag.Ident = parts[2]
 				}
 				atags = append(atags, atag)
 			}
 		}
+	}
+	return
+}
+
+func Decode_a_Tag(a string) (ta Tag_a, err error) {
+	// try to split it
+	parts := strings.Split(a, ":")
+	// there must be a kind first
+	ki := ints.New(0)
+	if _, err = ki.Unmarshal([]byte(parts[0])); chk.E(err) {
+		return
+	}
+	ta = Tag_a{
+		Kind: int(ki.Uint16()),
+	}
+	if len(parts) < 2 {
+		return
+	}
+	// next must be a pubkey
+	if len(parts[1]) != 2*schnorr.PubKeyBytesLen {
+		return
+	}
+	var pk []byte
+	if pk, err = hex.Dec(parts[1]); err != nil {
+		return
+	}
+	ta.Pubkey = pk
+	// there possibly can be nothing after this
+	if len(parts) >= 3 {
+		// third part is the identifier (d tag)
+		ta.Ident = parts[2]
 	}
 	return
 }
