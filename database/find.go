@@ -2,6 +2,7 @@ package database
 
 import (
 	"bytes"
+	"fmt"
 
 	"github.com/dgraph-io/badger/v4"
 
@@ -46,7 +47,7 @@ func (d *D) FindEventSerialById(evId []byte) (ser *varint.V, err error) {
 		return
 	}
 	if ser == nil {
-		err = errorf.E("event %0x not found", evId)
+		err = fmt.Errorf("event %0x not found", evId)
 		return
 	}
 	return
@@ -54,13 +55,13 @@ func (d *D) FindEventSerialById(evId []byte) (ser *varint.V, err error) {
 
 func (d *D) GetEventFromSerial(ser *varint.V) (ev *event.E, err error) {
 	if err = d.View(func(txn *badger.Txn) (err error) {
-		enc := indexes.EventDec(ser)
+		enc := indexes.EventEnc(ser)
 		kb := new(bytes.Buffer)
 		if err = enc.MarshalWrite(kb); chk.E(err) {
 			return
 		}
 		var item *badger.Item
-		if item, err = txn.Get(kb.Bytes()); chk.E(err) {
+		if item, err = txn.Get(kb.Bytes()); err != nil {
 			return
 		}
 		var val []byte
@@ -73,13 +74,13 @@ func (d *D) GetEventFromSerial(ser *varint.V) (ev *event.E, err error) {
 			return
 		}
 		return
-	}); chk.E(err) {
+	}); err != nil {
 		return
 	}
 	return
 }
 
-func (d *D) GetEventFullIndexFromSerial(ser *varint.V) (id []byte, err error) {
+func (d *D) GetEventIdFromSerial(ser *varint.V) (id []byte, err error) {
 	if err = d.View(func(txn *badger.Txn) (err error) {
 		enc := indexes.New(prefix.New(prefixes.FullIndex), ser)
 		prf := new(bytes.Buffer)
@@ -108,7 +109,7 @@ func (d *D) GetEventFullIndexFromSerial(ser *varint.V) (id []byte, err error) {
 
 func (d *D) GetEventById(evId []byte) (ev *event.E, err error) {
 	var ser *varint.V
-	if ser, err = d.FindEventSerialById(evId); chk.E(err) {
+	if ser, err = d.FindEventSerialById(evId); err != nil {
 		return
 	}
 	ev, err = d.GetEventFromSerial(ser)
@@ -117,7 +118,9 @@ func (d *D) GetEventById(evId []byte) (ev *event.E, err error) {
 
 // GetEventSerialsByCreatedAtRange returns the serials of events with the given since/until
 // range in reverse chronological order (starting at until, going back to since).
-func (d *D) GetEventSerialsByCreatedAtRange(since, until timestamp.Timestamp) (sers varint.S, err error) {
+func (d *D) GetEventSerialsByCreatedAtRange(since, until *timestamp.Timestamp,
+	limit *int, postLimit bool) (sers varint.S, err error) {
+	log.I.F("GetEventSerialsByCreatedAtRange")
 	// get the start (end) max possible index prefix
 	startCreatedAt, _ := indexes.CreatedAtVars()
 	startCreatedAt.FromInt(until.ToInt())
@@ -125,6 +128,7 @@ func (d *D) GetEventSerialsByCreatedAtRange(since, until timestamp.Timestamp) (s
 	if err = indexes.CreatedAtEnc(startCreatedAt, nil).MarshalWrite(prf); chk.E(err) {
 		return
 	}
+	var count int
 	if err = d.View(func(txn *badger.Txn) (err error) {
 		it := txn.NewIterator(badger.IteratorOptions{Reverse: true, Prefix: prf.Bytes()})
 		defer it.Close()
@@ -138,19 +142,70 @@ func (d *D) GetEventSerialsByCreatedAtRange(since, until timestamp.Timestamp) (s
 				// skip it then
 				continue
 			}
-			if ca.ToTimestamp() < since {
+			if ca.ToTimestamp() < *since {
 				break
 			}
 			sers = append(sers, ser)
+			count++
+			if !postLimit && count > *limit {
+				return
+			}
 		}
 		return
 	}); chk.E(err) {
 		return
 	}
+	if postLimit && len(sers) > *limit {
+		sers = sers[:*limit]
+	}
 	return
 }
 
-func (d *D) GetEventSerialsByKindsCreatedAtRange(kinds []int, since, until timestamp.Timestamp) (sers varint.S, err error) {
+func (d *D) GetEventSerialsByKinds(kinds []int, limit *int) (sers varint.S, err error) {
+	log.I.F("GetEventSerialsByKinds")
+	// get the start (end) max possible index prefix, one for each kind in the list
+	var searchIdxs [][]byte
+	kind, _ := indexes.KindVars()
+	for _, k := range kinds {
+		kind.Set(k)
+		prf := new(bytes.Buffer)
+		if err = indexes.KindEnc(kind, nil).MarshalWrite(prf); chk.E(err) {
+			return
+		}
+		searchIdxs = append(searchIdxs, prf.Bytes())
+	}
+	// log.I.S(searchIdxs)
+	var count int
+	for _, idx := range searchIdxs {
+		if err = d.View(func(txn *badger.Txn) (err error) {
+			// it := txn.NewIterator(badger.IteratorOptions{Reverse: true, Prefix: idx})
+			it := txn.NewIterator(badger.DefaultIteratorOptions)
+			defer it.Close()
+			var key []byte
+			for it.Seek(idx); it.ValidForPrefix(idx); it.Next() {
+				item := it.Item()
+				key = item.KeyCopy(nil)
+				ki, ser := indexes.KindVars()
+				buf := bytes.NewBuffer(key)
+				if err = indexes.KindDec(ki, ser).UnmarshalRead(buf); chk.E(err) {
+					// skip it then
+					continue
+				}
+				sers = append(sers, ser)
+				count++
+				if limit != nil && count >= *limit {
+					return
+				}
+			}
+			return
+		}); chk.E(err) {
+			return
+		}
+	}
+	return
+}
+
+func (d *D) GetEventSerialsByKindsCreatedAtRange(kinds []int, since, until *timestamp.Timestamp, limit *int) (sers varint.S, err error) {
 	// get the start (end) max possible index prefix, one for each kind in the list
 	var searchIdxs [][]byte
 	kind, startCreatedAt, _ := indexes.KindCreatedAtVars()
@@ -163,11 +218,12 @@ func (d *D) GetEventSerialsByKindsCreatedAtRange(kinds []int, since, until times
 		}
 		searchIdxs = append(searchIdxs, prf.Bytes())
 	}
+	var count int
 	for _, idx := range searchIdxs {
 		if err = d.View(func(txn *badger.Txn) (err error) {
 			it := txn.NewIterator(badger.IteratorOptions{Reverse: true, Prefix: idx})
 			defer it.Close()
-			key := make([]byte, 10)
+			var key []byte
 			for it.Rewind(); it.Valid(); it.Next() {
 				item := it.Item()
 				key = item.KeyCopy(key)
@@ -177,10 +233,14 @@ func (d *D) GetEventSerialsByKindsCreatedAtRange(kinds []int, since, until times
 					// skip it then
 					continue
 				}
-				if ca.ToTimestamp() < since {
+				if ca.ToTimestamp() < *since {
 					break
 				}
 				sers = append(sers, ser)
+				count++
+				if count > *limit {
+					return
+				}
 			}
 			return
 		}); chk.E(err) {
@@ -190,7 +250,58 @@ func (d *D) GetEventSerialsByKindsCreatedAtRange(kinds []int, since, until times
 	return
 }
 
-func (d *D) GetEventSerialsByAuthorsCreatedAtRange(pubkeys []string, since, until timestamp.Timestamp) (sers varint.S, err error) {
+func (d *D) GetEventSerialsByAuthors(pubkeys []string, limit *int) (sers varint.S, err error) {
+	// get the start (end) max possible index prefix, one for each kind in the list
+	var searchIdxs [][]byte
+	var pkDecodeErrs int
+	pubkey, _ := indexes.PubkeyVars()
+	for _, p := range pubkeys {
+		if err = pubkey.FromPubkeyHex(p); chk.E(err) {
+			// gracefully ignore wrong keys
+			pkDecodeErrs++
+			continue
+		}
+		if pkDecodeErrs == len(pubkeys) {
+			err = errorf.E("all pubkeys in authors field of filter failed to decode")
+			return
+		}
+		prf := new(bytes.Buffer)
+		if err = indexes.PubkeyEnc(pubkey, nil).MarshalWrite(prf); chk.E(err) {
+			return
+		}
+		searchIdxs = append(searchIdxs, prf.Bytes())
+	}
+	var count int
+	for _, idx := range searchIdxs {
+		if err = d.View(func(txn *badger.Txn) (err error) {
+			it := txn.NewIterator(badger.IteratorOptions{Reverse: true, Prefix: idx})
+			defer it.Close()
+			key := make([]byte, 10)
+			for it.Rewind(); it.Valid(); it.Next() {
+				item := it.Item()
+				key = item.KeyCopy(key)
+				kind, ca, ser := indexes.KindCreatedAtVars()
+				buf := bytes.NewBuffer(key)
+				if err = indexes.KindCreatedAtDec(kind, ca, ser).UnmarshalRead(buf); chk.E(err) {
+					// skip it then
+					continue
+				}
+				sers = append(sers, ser)
+				count++
+				if count > *limit {
+					return
+				}
+			}
+			return
+		}); chk.E(err) {
+			return
+		}
+	}
+	return
+}
+
+func (d *D) GetEventSerialsByAuthorsCreatedAtRange(pubkeys []string,
+	since, until *timestamp.Timestamp, limit *int) (sers varint.S, err error) {
 	// get the start (end) max possible index prefix, one for each kind in the list
 	var searchIdxs [][]byte
 	var pkDecodeErrs int
@@ -212,6 +323,7 @@ func (d *D) GetEventSerialsByAuthorsCreatedAtRange(pubkeys []string, since, unti
 		}
 		searchIdxs = append(searchIdxs, prf.Bytes())
 	}
+	var count int
 	for _, idx := range searchIdxs {
 		if err = d.View(func(txn *badger.Txn) (err error) {
 			it := txn.NewIterator(badger.IteratorOptions{Reverse: true, Prefix: idx})
@@ -226,10 +338,14 @@ func (d *D) GetEventSerialsByAuthorsCreatedAtRange(pubkeys []string, since, unti
 					// skip it then
 					continue
 				}
-				if ca.ToTimestamp() < since {
+				if ca.ToTimestamp() < *since {
 					break
 				}
 				sers = append(sers, ser)
+				count++
+				if count > *limit {
+					return
+				}
 			}
 			return
 		}); chk.E(err) {
@@ -239,7 +355,8 @@ func (d *D) GetEventSerialsByAuthorsCreatedAtRange(pubkeys []string, since, unti
 	return
 }
 
-func (d *D) GetEventSerialsByKindsAuthorsCreatedAtRange(kinds []int, pubkeys []string, since, until timestamp.Timestamp) (sers varint.S, err error) {
+func (d *D) GetEventSerialsByKindsAuthorsCreatedAtRange(kinds []int, pubkeys []string,
+	since, until *timestamp.Timestamp, limit *int) (sers varint.S, err error) {
 	// get the start (end) max possible index prefix, one for each kind in the list
 	var searchIdxs [][]byte
 	var pkDecodeErrs int
@@ -264,6 +381,7 @@ func (d *D) GetEventSerialsByKindsAuthorsCreatedAtRange(kinds []int, pubkeys []s
 			searchIdxs = append(searchIdxs, prf.Bytes())
 		}
 	}
+	var count int
 	for _, idx := range searchIdxs {
 		if err = d.View(func(txn *badger.Txn) (err error) {
 			it := txn.NewIterator(badger.IteratorOptions{Reverse: true, Prefix: idx})
@@ -278,10 +396,14 @@ func (d *D) GetEventSerialsByKindsAuthorsCreatedAtRange(kinds []int, pubkeys []s
 					// skip it then
 					continue
 				}
-				if ca.ToTimestamp() < since {
+				if ca.ToTimestamp() < *since {
 					break
 				}
 				sers = append(sers, ser)
+				count++
+				if count > *limit {
+					return
+				}
 			}
 			return
 		}); chk.E(err) {
@@ -293,7 +415,7 @@ func (d *D) GetEventSerialsByKindsAuthorsCreatedAtRange(kinds []int, pubkeys []s
 
 // GetEventSerialsByTagsCreatedAtRange searches for events that match the tags in a filter and
 // returns the list of serials that were found.
-func (d *D) GetEventSerialsByTagsCreatedAtRange(t filter.TagMap) (sers varint.S, err error) {
+func (d *D) GetEventSerialsByTagsCreatedAtRange(t filter.TagMap, limit *int) (sers varint.S, err error) {
 	if len(t) < 1 {
 		err = errorf.E("no tags provided")
 		return
@@ -424,20 +546,21 @@ func (d *D) GetEventSerialsByTagsCreatedAtRange(t filter.TagMap) (sers varint.S,
 				searchIdxs = append(searchIdxs, buf.Bytes())
 			}
 		}
+		// todo: implement
 	}
 	return
 }
 
 // GetEventSerialsByAuthorsTagsCreatedAtRange first performs
-func (d *D) GetEventSerialsByAuthorsTagsCreatedAtRange(t filter.TagMap, pubkeys []string, since, until timestamp.Timestamp) (sers varint.S, err error) {
+func (d *D) GetEventSerialsByAuthorsTagsCreatedAtRange(t filter.TagMap, pubkeys []string, since, until *timestamp.Timestamp, limit *int) (sers varint.S, err error) {
 	var acSers, tagSers varint.S
-	if acSers, err = d.GetEventSerialsByAuthorsCreatedAtRange(pubkeys, since, until); chk.E(err) {
+	if acSers, err = d.GetEventSerialsByAuthorsCreatedAtRange(pubkeys, since, until, limit); chk.E(err) {
 		return
 	}
 	// now we have the most limited set of serials that are included by the pubkeys, we can then
 	// construct the tags searches for all of these serials to filter out the events that don't
 	// have both author AND one of the tags.
-	if tagSers, err = d.GetEventSerialsByTagsCreatedAtRange(t); chk.E(err) {
+	if tagSers, err = d.GetEventSerialsByTagsCreatedAtRange(t, limit); chk.E(err) {
 		return
 	}
 	// remove the serials that are not present in both lists.
@@ -446,15 +569,15 @@ func (d *D) GetEventSerialsByAuthorsTagsCreatedAtRange(t filter.TagMap, pubkeys 
 }
 
 // GetEventSerialsByKindsTagsCreatedAtRange first performs
-func (d *D) GetEventSerialsByKindsTagsCreatedAtRange(t filter.TagMap, kinds []int, since, until timestamp.Timestamp) (sers varint.S, err error) {
+func (d *D) GetEventSerialsByKindsTagsCreatedAtRange(t filter.TagMap, kinds []int, since, until *timestamp.Timestamp, limit *int) (sers varint.S, err error) {
 	var acSers, tagSers varint.S
-	if acSers, err = d.GetEventSerialsByKindsCreatedAtRange(kinds, since, until); chk.E(err) {
+	if acSers, err = d.GetEventSerialsByKindsCreatedAtRange(kinds, since, until, limit); chk.E(err) {
 		return
 	}
 	// now we have the most limited set of serials that are included by the pubkeys, we can then
 	// construct the tags searches for all of these serials to filter out the events that don't
 	// have both author AND one of the tags.
-	if tagSers, err = d.GetEventSerialsByTagsCreatedAtRange(t); chk.E(err) {
+	if tagSers, err = d.GetEventSerialsByTagsCreatedAtRange(t, limit); chk.E(err) {
 		return
 	}
 	// remove the serials that are not present in both lists.
@@ -463,15 +586,18 @@ func (d *D) GetEventSerialsByKindsTagsCreatedAtRange(t filter.TagMap, kinds []in
 }
 
 // GetEventSerialsByKindsAuthorsTagsCreatedAtRange first performs
-func (d *D) GetEventSerialsByKindsAuthorsTagsCreatedAtRange(t filter.TagMap, kinds []int, pubkeys []string, since, until timestamp.Timestamp) (sers varint.S, err error) {
+func (d *D) GetEventSerialsByKindsAuthorsTagsCreatedAtRange(t filter.TagMap, kinds []int,
+	pubkeys []string, since, until *timestamp.Timestamp,
+	limit *int) (sers varint.S, err error) {
 	var acSers, tagSers varint.S
-	if acSers, err = d.GetEventSerialsByKindsAuthorsCreatedAtRange(kinds, pubkeys, since, until); chk.E(err) {
+	if acSers, err = d.GetEventSerialsByKindsAuthorsCreatedAtRange(kinds, pubkeys,
+		since, until, limit); chk.E(err) {
 		return
 	}
 	// now we have the most limited set of serials that are included by the pubkeys, we can then
 	// construct the tags searches for all of these serials to filter out the events that don't
 	// have both author AND one of the tags.
-	if tagSers, err = d.GetEventSerialsByTagsCreatedAtRange(t); chk.E(err) {
+	if tagSers, err = d.GetEventSerialsByTagsCreatedAtRange(t, limit); chk.E(err) {
 		return
 	}
 	// remove the serials that are not present in both lists.
@@ -480,6 +606,7 @@ func (d *D) GetEventSerialsByKindsAuthorsTagsCreatedAtRange(t filter.TagMap, kin
 }
 
 func (d *D) GetFullIndexesFromSerials(sers varint.S) (index []indexes.FullIndex, err error) {
+	log.I.F("GetFullIndexesFromSerials")
 	for _, ser := range sers {
 		if err = d.View(func(txn *badger.Txn) (err error) {
 			buf := new(bytes.Buffer)

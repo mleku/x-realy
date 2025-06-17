@@ -2,6 +2,7 @@ package indexes
 
 import (
 	"io"
+	"reflect"
 
 	"x.realy.lol/chk"
 	"x.realy.lol/codec"
@@ -32,10 +33,10 @@ func New(encoders ...codec.I) (i *T) { return &T{encoders} }
 
 func (t *T) MarshalWrite(w io.Writer) (err error) {
 	for _, e := range t.Encs {
-		if e == nil {
+		if e == nil || reflect.ValueOf(e).IsNil() {
 			// allow a field to be empty, as is needed for search indexes to create search
 			// prefixes.
-			continue
+			return
 		}
 		if err = e.MarshalWrite(w); chk.E(err) {
 			return
@@ -173,7 +174,7 @@ func KindCreatedAtVars() (ki *kindidx.T, ca *timestamp.T, ser *varint.V) {
 	return
 }
 func KindCreatedAtEnc(ki *kindidx.T, ca *timestamp.T, ser *varint.V) (enc *T) {
-	return New(prefix.New(prefixes.Kind), ki, ca, ser)
+	return New(prefix.New(prefixes.KindCreatedAt), ki, ca, ser)
 }
 func KindCreatedAtDec(ki *kindidx.T, ca *timestamp.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), ki, ca, ser)
@@ -185,7 +186,7 @@ func KindPubkeyCreatedAtVars() (ki *kindidx.T, p *pubhash.T, ca *timestamp.T, se
 	return
 }
 func KindPubkeyCreatedAtEnc(ki *kindidx.T, p *pubhash.T, ca *timestamp.T, ser *varint.V) (enc *T) {
-	return New(prefix.New(prefixes.Kind), ki, p, ca, ser)
+	return New(prefix.New(prefixes.KindPubkeyCreatedAt), ki, p, ca, ser)
 }
 func KindPubkeyCreatedAtDec(ki *kindidx.T, p *pubhash.T, ca *timestamp.T, ser *varint.V) (enc *T) {
 	return New(prefix.New(), ki, p, ca, ser)

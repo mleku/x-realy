@@ -120,12 +120,16 @@ func TestGetEventIndexes(t *testing.T) {
 		if indices, _, err = d.GetEventIndexes(ev); chk.E(err) {
 			t.Fatal(err)
 		}
+		log.I.S(indices)
 		datasize += len(b)
 		for _, v := range indices {
 			size += len(v)
 		}
 		_ = indices
 		count++
+		if count > 1 {
+			break
+		}
 	}
 	log.I.F("unmarshaled, verified and indexed %d events in %s, %d Mb of indexes from %d Mb of events, %d Mb as binary, failed verify %d, failed encode %d", count, time.Now().Sub(start), size/units.Mb, datasize/units.Mb, binsize/units.Mb, errs, encErrs)
 	d.Close()

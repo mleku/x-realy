@@ -86,3 +86,4 @@ node_modules/**
 /blocklist.json
 /gui/gui/main.wasm
 /gui/gui/index.html
+database/testrealy
