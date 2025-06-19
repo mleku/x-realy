@@ -8,7 +8,7 @@ import (
 	"lukechampine.com/frand"
 )
 
-func TestUint16Codec(t *testing.T) {
+func TestUint16(t *testing.T) {
 	// Helper function to generate random 16-bit integers
 	generateRandomUint16 := func() uint16 {
 		return uint16(frand.Intn(math.MaxUint16)) // math.MaxUint16 == 65535

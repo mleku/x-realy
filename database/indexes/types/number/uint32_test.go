@@ -8,7 +8,7 @@ import (
 	"lukechampine.com/frand"
 )
 
-func TestUint32Codec(t *testing.T) {
+func TestUint32(t *testing.T) {
 	// Helper function to generate random 32-bit integers
 	generateRandomUint32 := func() uint32 {
 		return uint32(frand.Intn(math.MaxUint32)) // math.MaxUint32 == 4294967295
@@ -20,7 +20,7 @@ func TestUint32Codec(t *testing.T) {
 		randomInt := int(randomUint32)
 
 		// Create a new codec
-		codec := new(Uint32Codec)
+		codec := new(Uint32)
 
 		// Test UInt32 setter and getter
 		codec.SetUint32(randomUint32)
@@ -48,14 +48,14 @@ func TestUint32Codec(t *testing.T) {
 		bufDec := bytes.NewBuffer(encoded)
 
 		// Decode back the value
-		decodedCodec := new(Uint32Codec)
-		err = decodedCodec.UnmarshalRead(bufDec)
+		decoded := new(Uint32)
+		err = decoded.UnmarshalRead(bufDec)
 		if err != nil {
 			t.Fatalf("UnmarshalRead failed: %v", err)
 		}
 
-		if decodedCodec.Uint32() != randomUint32 {
-			t.Fatalf("Decoded value mismatch: got %d, expected %d", decodedCodec.Uint32(), randomUint32)
+		if decoded.Uint32() != randomUint32 {
+			t.Fatalf("Decoded value mismatch: got %d, expected %d", decoded.Uint32(), randomUint32)
 		}
 
 		// Compare encoded bytes to ensure correctness

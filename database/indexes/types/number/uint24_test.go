@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestUint24Codec(t *testing.T) {
+func TestUint24(t *testing.T) {
 	tests := []struct {
 		name        string
 		value       uint32
@@ -19,7 +19,7 @@ func TestUint24Codec(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			codec := new(Uint24Codec)
+			codec := new(Uint24)
 
 			// Test SetUint24
 			err := codec.SetUint24(tt.value)
@@ -53,14 +53,14 @@ func TestUint24Codec(t *testing.T) {
 			}
 
 			// Decode from the buffer
-			decodedCodec := new(Uint24Codec)
-			if err := decodedCodec.UnmarshalRead(buf); err != nil {
+			decoded := new(Uint24)
+			if err := decoded.UnmarshalRead(buf); err != nil {
 				t.Fatalf("UnmarshalRead failed: %v", err)
 			}
 
 			// Validate decoded value
-			if decodedCodec.Uint24() != tt.value {
-				t.Errorf("Decoded value mismatch: got %d, expected %d", decodedCodec.Uint24(), tt.value)
+			if decoded.Uint24() != tt.value {
+				t.Errorf("Decoded value mismatch: got %d, expected %d", decoded.Uint24(), tt.value)
 			}
 		})
 	}

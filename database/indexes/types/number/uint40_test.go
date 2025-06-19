@@ -5,8 +5,8 @@ import (
 	"testing"
 )
 
-func TestUint40Codec(t *testing.T) {
-	// Test cases for Uint40Codec
+func TestUint40(t *testing.T) {
+	// Test cases for Uint40
 	tests := []struct {
 		name        string
 		value       uint64
@@ -20,7 +20,7 @@ func TestUint40Codec(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			codec := new(Uint40Codec)
+			codec := new(Uint40)
 
 			// Test SetUint40
 			err := codec.SetUint40(tt.value)
@@ -54,14 +54,14 @@ func TestUint40Codec(t *testing.T) {
 			}
 
 			// Decode from the buffer
-			decodedCodec := new(Uint40Codec)
-			if err = decodedCodec.UnmarshalRead(buf); err != nil {
+			decoded := new(Uint40)
+			if err = decoded.UnmarshalRead(buf); err != nil {
 				t.Fatalf("UnmarshalRead failed: %v", err)
 			}
 
 			// Validate decoded value
-			if decodedCodec.Uint40() != tt.value {
-				t.Errorf("Decoded value mismatch: got %d, expected %d", decodedCodec.Uint40(), tt.value)
+			if decoded.Uint40() != tt.value {
+				t.Errorf("Decoded value mismatch: got %d, expected %d", decoded.Uint40(), tt.value)
 			}
 		})
 	}

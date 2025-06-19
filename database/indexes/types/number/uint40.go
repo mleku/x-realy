@@ -8,12 +8,12 @@ import (
 // MaxUint40 is the maximum value of a 40-bit unsigned integer: 2^40 - 1.
 const MaxUint40 uint64 = 1<<40 - 1
 
-// Uint40Codec is a codec for encoding and decoding 40-bit unsigned integers.
-type Uint40Codec struct{ value uint64 }
+// Uint40 is a codec for encoding and decoding 40-bit unsigned integers.
+type Uint40 struct{ value uint64 }
 
 // SetUint40 sets the value as a 40-bit unsigned integer.
 // If the value exceeds the maximum allowable value for 40 bits, it returns an error.
-func (c *Uint40Codec) SetUint40(value uint64) error {
+func (c *Uint40) SetUint40(value uint64) error {
 	if value > MaxUint40 {
 		return errors.New("value exceeds 40-bit range")
 	}
@@ -22,11 +22,11 @@ func (c *Uint40Codec) SetUint40(value uint64) error {
 }
 
 // Uint40 gets the value as a 40-bit unsigned integer.
-func (c *Uint40Codec) Uint40() uint64 { return c.value }
+func (c *Uint40) Uint40() uint64 { return c.value }
 
 // SetInt sets the value as an int, converting it to a 40-bit unsigned integer.
 // If the value is out of the 40-bit range, it returns an error.
-func (c *Uint40Codec) SetInt(value int) error {
+func (c *Uint40) SetInt(value int) error {
 	if value < 0 || uint64(value) > MaxUint40 {
 		return errors.New("value exceeds 40-bit range")
 	}
@@ -36,11 +36,11 @@ func (c *Uint40Codec) SetInt(value int) error {
 
 // Int gets the value as an int, converted from the 40-bit unsigned integer.
 // Note: If the value exceeds the int range, it will be truncated.
-func (c *Uint40Codec) Int() int { return int(c.value) }
+func (c *Uint40) Int() int { return int(c.value) }
 
 // MarshalWrite encodes the 40-bit unsigned integer and writes it to the provided writer.
 // The encoding uses 5 bytes in BigEndian order.
-func (c *Uint40Codec) MarshalWrite(w io.Writer) (err error) {
+func (c *Uint40) MarshalWrite(w io.Writer) (err error) {
 	if c.value > MaxUint40 {
 		return errors.New("value exceeds 40-bit range")
 	}
@@ -57,7 +57,7 @@ func (c *Uint40Codec) MarshalWrite(w io.Writer) (err error) {
 }
 
 // UnmarshalRead reads 5 bytes from the provided reader and decodes it into a 40-bit unsigned integer.
-func (c *Uint40Codec) UnmarshalRead(r io.Reader) (err error) {
+func (c *Uint40) UnmarshalRead(r io.Reader) (err error) {
 	// Buffer for the 5 bytes
 	buf := make([]byte, 5)
 	_, err = r.Read(buf)

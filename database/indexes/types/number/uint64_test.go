@@ -8,7 +8,7 @@ import (
 	"lukechampine.com/frand"
 )
 
-func TestUint64Codec(t *testing.T) {
+func TestUint64(t *testing.T) {
 	// Helper function to generate random 64-bit integers
 	generateRandomUint64 := func() uint64 {
 		return frand.Uint64n(math.MaxUint64) // math.MaxUint64 == 18446744073709551615
@@ -20,7 +20,7 @@ func TestUint64Codec(t *testing.T) {
 		randomInt := int(randomUint64)
 
 		// Create a new codec
-		codec := new(Uint64Codec)
+		codec := new(Uint64)
 
 		// Test UInt64 setter and getter
 		codec.SetUint64(randomUint64)
@@ -48,14 +48,14 @@ func TestUint64Codec(t *testing.T) {
 		bufDec := bytes.NewBuffer(encoded)
 
 		// Decode back the value
-		decodedCodec := new(Uint64Codec)
-		err = decodedCodec.UnmarshalRead(bufDec)
+		decoded := new(Uint64)
+		err = decoded.UnmarshalRead(bufDec)
 		if err != nil {
 			t.Fatalf("UnmarshalRead failed: %v", err)
 		}
 
-		if decodedCodec.Uint64() != randomUint64 {
-			t.Fatalf("Decoded value mismatch: got %d, expected %d", decodedCodec.Uint64(), randomUint64)
+		if decoded.Uint64() != randomUint64 {
+			t.Fatalf("Decoded value mismatch: got %d, expected %d", decoded.Uint64(), randomUint64)
 		}
 
 		// Compare encoded bytes to ensure correctness
